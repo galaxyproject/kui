@@ -13,8 +13,8 @@ USERS_TABLE="users-dev"
 JOBS_TABLE="jobs-dev"
 USAGE_TABLE="usage-dev"
 
+galaxy_server="https://usegalaxy.org"
 export PGDATABASE=galaxy_main
-# export PGDATABASE=galaxy
 export PATH=/home/afgane/google-cloud-sdk/bin/:$PATH
 
 
@@ -132,6 +132,8 @@ echo "[`date`] --- Workflows: $num_workflows"
 num_workflow_invocations=$(gxadmin query workflow-invocation-count $next_month | awk '/[0-9]+$/ { print $1 }')
 echo "[`date`] --- Workflow invocations: $num_workflow_invocations"
 
+num_tool_installs=$(curl -sS "$galaxy_server"/api/tools?in_panel=false | jq '[.[] | select(has("id") and .hidden == "")] | length')
+echo "[`date`] --- Tool installs: $num_tool_installs"
 
 # Check if entries for the given month already exist in BQ
 check_usage_query="SELECT COUNT(*) FROM \`$PROJECT_ID\`.$DATASET.\`$USAGE_TABLE\` WHERE month='$year-$month-01'"
@@ -142,12 +144,12 @@ echo "[`date`] -- Usage data for $year-$month exists in BQ: $check_usage_query"
 # If entry for the given month does not exist, insert data. Otherwise, update the values.
 if [ "$usage_entry_exists" -eq 0 ]; then
     # Build an INSERT query and run it
-    usage_insert_query="INSERT INTO \`$PROJECT_ID\`.$DATASET.\`$USAGE_TABLE\` (month, total_histories, total_datasets, total_workflows, total_workflow_invocations) VALUES ('$year-$month-01', $num_histories, $num_datasets, $num_workflows, $num_workflow_invocations)"
+    usage_insert_query="INSERT INTO \`$PROJECT_ID\`.$DATASET.\`$USAGE_TABLE\` (month, total_histories, total_datasets, total_workflows, total_workflow_invocations, tool_installs) VALUES ('$year-$month-01', $num_histories, $num_datasets, $num_workflows, $num_workflow_invocations, $num_tool_installs)"
     echo "[`date`] -- Inserting new usage vales using: $usage_insert_query"
     bq query --use_legacy_sql=false --project_id="$PROJECT_ID" "$usage_insert_query"
 else
     # Build and UPDATE query and run it
-    usage_update_query="UPDATE \`$PROJECT_ID\`.$DATASET.\`$USAGE_TABLE\` SET total_histories=$num_histories, total_datasets=$num_datasets, total_workflows=$num_workflows, total_workflow_invocations=$num_workflow_invocations WHERE month='$year-$month-01'"
+    usage_update_query="UPDATE \`$PROJECT_ID\`.$DATASET.\`$USAGE_TABLE\` SET total_histories=$num_histories, total_datasets=$num_datasets, total_workflows=$num_workflows, total_workflow_invocations=$num_workflow_invocations, tool_installs=$num_tool_installs WHERE month='$year-$month-01'"
     echo "[`date`] -- Updating usage values for $year-$month using: $usage_update_query"
     bq query --use_legacy_sql=false --project_id="$PROJECT_ID" "$usage_update_query"
 fi
