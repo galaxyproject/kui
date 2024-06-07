@@ -1,0 +1,44 @@
+[
+  {
+    "name": "month",
+    "mode": "NULLABLE",
+    "type": "DATE",
+    "description": null,
+    "fields": []
+  },
+  {
+    "name": "total_registered",
+    "mode": "NULLABLE",
+    "type": "INTEGER",
+    "description": "Total number of registered users.",
+    "fields": []
+  },
+  {
+    "name": "new_registrations",
+    "mode": "NULLABLE",
+    "type": "INTEGER",
+    "description": "Number of newly registered users.",
+    "fields": []
+  },
+  {
+    "name": "engaged",
+    "mode": "NULLABLE",
+    "type": "INTEGER",
+    "description": "Number of engaged users (engaged = ran a job).",
+    "fields": []
+  },
+  {
+    "name": "engaged_day_plus",
+    "mode": "NULLABLE",
+    "type": "INTEGER",
+    "description": "Number of users that have been engaged >1 day.",
+    "fields": []
+  },
+  {
+    "name": "new_engaged_day_plus",
+    "mode": "NULLABLE",
+    "type": "INTEGER",
+    "description": "Number of newly registered users only that have been engaged >1 day. ",
+    "fields": []
+  }
+]
