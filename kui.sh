@@ -69,7 +69,7 @@ if [ "$users_entry_exists" -eq 0 ]; then
     bq query --use_legacy_sql=false --project_id="$PROJECT_ID" "$users_insert_query"
 else
     # Build and UPDATE query and run it
-    users_update_query="UPDATE \`$PROJECT_ID\`.$DATASET.\`$USERS_TABLE\` SET total_registered=$total_registered, new_registrations=$new_registrations, engaged=$engaged, engaged_day_plus=$engaged_day_plus, new_engaged_day_plus=$new_engaged_day_plus WHERE month=$year-$month-01"
+    users_update_query="UPDATE \`$PROJECT_ID\`.$DATASET.\`$USERS_TABLE\` SET total_registered=$total_registered, new_registrations=$new_registrations, engaged=$engaged, engaged_day_plus=$engaged_day_plus, new_engaged_day_plus=$new_engaged_day_plus WHERE month='$year-$month-01'"
     echo "[`date`] -- Updating users values for $year-$month using: $users_update_query"
     bq query --use_legacy_sql=false --project_id="$PROJECT_ID" "$users_update_query"
 fi
@@ -111,7 +111,7 @@ if [ "$jobs_entry_exists" -eq 0 ]; then
     bq query --use_legacy_sql=false --project_id="$PROJECT_ID" "$jobs_query"
 else
     # Build and UPDATE query and run it
-    jobs_update_query="UPDATE \`$PROJECT_ID\`.$DATASET.\`$JOBS_TABLE\` SET total_jobs=$total_jobs, month_jobs=$month_jobs, by_new_users=$by_new_users, by_new_users_engaged_day_plus=$by_new_users_engaged_day_plus, errored=$errored, errored_by_new_users=$errored_by_new_users WHERE month=$year-$month-01"
+    jobs_update_query="UPDATE \`$PROJECT_ID\`.$DATASET.\`$JOBS_TABLE\` SET total_jobs=$total_jobs, month_jobs=$month_jobs, by_new_users=$by_new_users, by_new_users_engaged_day_plus=$by_new_users_engaged_day_plus, errored=$errored, errored_by_new_users=$errored_by_new_users WHERE month='$year-$month-01'"
     echo "[`date`] -- Updating jobs values for $year-$month using: $jobs_update_query"
     bq query --use_legacy_sql=false --project_id="$PROJECT_ID" "$jobs_update_query"
 fi

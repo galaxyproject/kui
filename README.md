@@ -63,3 +63,10 @@ script every month:
 ```bash
 0 1 1 * * /path/to/kui.sh
 ```
+
+You will also need to run the following `gcloud` command to set up credentials
+for the cron job:
+
+```bash
+gcloud auth application-default login
+```
