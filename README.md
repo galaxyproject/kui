@@ -58,10 +58,11 @@ If not provided, the script will collect data for the previous month.
 ### Cron job setup
 
 Edit the crontab file with `crontab -e` and add the following line to run the
-script every month:
+script every month (create `~/kui_logs` directory if it doesn't exist or update
+the command to use a different directory):
 
 ```bash
-0 1 1 * * /path/to/kui.sh
+0 1 1 * * /path/to/kui.sh >> "~/kui_logs/kui-run-logs-$(date +\%Y\%m).log"
 ```
 
 You will also need to run the following `gcloud` command to set up credentials
@@ -70,3 +71,6 @@ for the cron job:
 ```bash
 gcloud auth application-default login
 ```
+
+The above cron job will run the script at 1 AM on the first day of every month
+to automatically update the KUI dashboard with the latest data.
