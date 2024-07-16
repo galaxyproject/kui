@@ -16,7 +16,17 @@ to be run every month.
 
 To run this script, you need
 [google-cloud-sdk](https://cloud.google.com/sdk/docs/install) installed and
-configured, including being logged in. You also need
+configured, including being logged in. The following is the sequence of commands
+you'll want to run to log in:
+
+```bash
+gcloud init
+gcloud config set project PROJECT_ID
+```
+
+If you are being added to an existing GCP project, you will need to be added to the project as an *Editor* and also as an *BigQuery Data Editor* on the relevant table.
+
+You also need [`jq`](https://jqlang.github.io/jq/) and
 [`gxadmin`](https://github.com/galaxyproject/gxadmin) installed and configured.
 
 ### BigQuery setup
