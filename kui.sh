@@ -2,7 +2,7 @@
 
 # Query a Galaxy database to extract values for populating the Key Usage Indicators dashboard, available at gxy.io/kui.
 
-# Before running this script, update the varaibles at top as needed.
+# Before running this script, update the variables at top as needed.
 # Usage: ./kui.sh [YYYY] [MM]
 
 
@@ -13,9 +13,12 @@ USERS_TABLE="users-dev"
 JOBS_TABLE="jobs-dev"
 USAGE_TABLE="usage-dev"
 
+# Set the Galaxy server URL
 galaxy_server="https://usegalaxy.org"
+
+# Depending on your environment, you may need to set the following environment variables for gxadmin and gcloud to work.
 export PGDATABASE=galaxy_main
-export PATH=/home/afgane/google-cloud-sdk/bin/:$PATH
+export PATH=/path/to/google-cloud-sdk/bin/:$PATH
 
 
 # If month and years parameters are passed, use them, otherwise use previous month

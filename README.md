@@ -16,15 +16,15 @@ to be run every month.
 
 To run this script, you need
 [google-cloud-sdk](https://cloud.google.com/sdk/docs/install) installed and
-configured, including being logged in. The following is the sequence of commands
-you'll want to run to log in:
+configured, including being authenticated. If you are being added to an existing
+GCP project, you will need to be added to the project as an *Editor* and also as
+an *BigQuery Data Editor* on the relevant table. The following is the sequence
+of commands you'll want to run to log in:
 
 ```bash
 gcloud init
-gcloud config set project PROJECT_ID
+gcloud config set project GCP_PROJECT_ID
 ```
-
-If you are being added to an existing GCP project, you will need to be added to the project as an *Editor* and also as an *BigQuery Data Editor* on the relevant table.
 
 You also need [`jq`](https://jqlang.github.io/jq/) and
 [`gxadmin`](https://github.com/galaxyproject/gxadmin) installed and configured.
@@ -76,7 +76,10 @@ the command to use a different directory):
 ```
 
 You will also need to run the following `gcloud` command to set up credentials
-for the cron job:
+for the cron job. This needs to be done only once. Note that this is different
+from the `gcloud init` command you may have run in your local environment, as
+the cron job will need to use application default credentials to authenticate
+with GCP so the Python script can access BigQuery:
 
 ```bash
 gcloud auth application-default login
