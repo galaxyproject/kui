@@ -21,6 +21,20 @@ export PGDATABASE=galaxy_main
 export PATH=/path/to/google-cloud-sdk/bin/:$PATH
 
 
+# Function to convert empty, "null", or non-numeric strings to "NULL" for SQL insertion
+# This ensures that if a gxadmin query returns no value, or 'null' (e.g., from jq),
+# it is properly represented as SQL NULL in the BigQuery query.
+format_for_sql_number() {
+  local value="$1"
+  # Check if the value is empty, the literal string "null", or does not consist purely of digits (with optional sign)
+  if [[ -z "$value" || "$value" == "null" || ! "$value" =~ ^[+-]?[0-9]+$ ]]; then
+    echo "NULL"
+  else
+    echo "$value"
+  fi
+}
+
+
 # If month and years parameters are passed, use them, otherwise use previous month
 if [ -z "$2" ]
 then
@@ -41,20 +55,25 @@ echo "[`date`] -- Working on data for $year-$month."
 
 # Get user data
 echo "[`date`] -- Getting user data."
-total_registered=$(gxadmin query users-total "$next_month" | awk "/[0-9]+$/ { print \$1 }")
-echo "[`date`] --- Total registered users: $total_registered"
+total_registered_raw=$(gxadmin query users-total "$next_month" | awk "/[0-9]+$/ { print \$1 }")
+total_registered=$(format_for_sql_number "$total_registered_raw")
+echo "[`date`] --- Total registered users: $total_registered_raw (SQL: $total_registered)"
 
-new_registrations=$(gxadmin query monthly-users-registered --year="$year" --month="$month" | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- New user registrations: $new_registrations"
+new_registrations_raw=$(gxadmin query monthly-users-registered --year="$year" --month="$month" | awk "/$year-$month/ { print \$3 }")
+new_registrations=$(format_for_sql_number "$new_registrations_raw")
+echo "[`date`] --- New user registrations: $new_registrations_raw (SQL: $new_registrations)"
 
-engaged=$(gxadmin query monthly-users-active --year=$year --month=$month | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- Engaged users: $engaged"
+engaged_raw=$(gxadmin query monthly-users-active --year=$year --month=$month | awk "/$year-$month/ { print \$3 }")
+engaged=$(format_for_sql_number "$engaged_raw")
+echo "[`date`] --- Engaged users: $engaged_raw (SQL: $engaged)"
 
-engaged_day_plus=$(gxadmin query users-engaged-multiday $year-$month | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- Engaged users more than a day: $engaged_day_plus"
+engaged_day_plus_raw=$(gxadmin query users-engaged-multiday $year-$month | awk "/$year-$month/ { print \$3 }")
+engaged_day_plus=$(format_for_sql_number "$engaged_day_plus_raw")
+echo "[`date`] --- Engaged users more than a day: $engaged_day_plus_raw (SQL: $engaged_day_plus)"
 
-new_engaged_day_plus=$(gxadmin query users-engaged-multiday $year-$month --new_only | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- New engaged users more than a day: $new_engaged_day_plus"
+new_engaged_day_plus_raw=$(gxadmin query users-engaged-multiday $year-$month --new_only | awk "/$year-$month/ { print \$3 }")
+new_engaged_day_plus=$(format_for_sql_number "$new_engaged_day_plus_raw")
+echo "[`date`] --- New engaged users more than a day: $new_engaged_day_plus_raw (SQL: $new_engaged_day_plus)"
 
 
 # Check if entries for the given month already exist in BQ
@@ -81,23 +100,29 @@ fi
 
 # Get job data
 echo "[`date`] -- Getting job data."
-total_jobs=$(gxadmin query total-jobs $next_month --no_state | awk '/[0-9]+$/ { print $1 }')
-echo "[`date`] --- Total jobs: $total_jobs"
+total_jobs_raw=$(gxadmin query total-jobs $next_month --no_state | awk '/[0-9]+$/ { print $1 }')
+total_jobs=$(format_for_sql_number "$total_jobs_raw")
+echo "[`date`] --- Total jobs: $total_jobs_raw (SQL: $total_jobs)"
 
-month_jobs=$(gxadmin query monthly-jobs --year=$year --month=$month | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- Jobs in $year-$month: $month_jobs"
+month_jobs_raw=$(gxadmin query monthly-jobs --year=$year --month=$month | awk "/$year-$month/ { print \$3 }")
+month_jobs=$(format_for_sql_number "$month_jobs_raw")
+echo "[`date`] --- Jobs in $year-$month: $month_jobs_raw (SQL: $month_jobs)"
 
-by_new_users=$(gxadmin query monthly-jobs-by-new-users $year-$month --no_state | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- Jobs by new users: $by_new_users"
+by_new_users_raw=$(gxadmin query monthly-jobs-by-new-users $year-$month --no_state | awk "/$year-$month/ { print \$3 }")
+by_new_users=$(format_for_sql_number "$by_new_users_raw")
+echo "[`date`] --- Jobs by new users: $by_new_users_raw (SQL: $by_new_users)"
 
-by_new_users_engaged_day_plus=$(gxadmin query monthly-jobs-by-new-multiday-users $year-$month | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- Jobs by new users engaged more than a day: $by_new_users_engaged_day_plus"
+by_new_users_engaged_day_plus_raw=$(gxadmin query monthly-jobs-by-new-multiday-users $year-$month | awk "/$year-$month/ { print \$3 }")
+by_new_users_engaged_day_plus=$(format_for_sql_number "$by_new_users_engaged_day_plus_raw")
+echo "[`date`] --- Jobs by new users engaged more than a day: $by_new_users_engaged_day_plus_raw (SQL: $by_new_users_engaged_day_plus)"
 
-errored=$(gxadmin query monthly-jobs --year=$year --month=$month --state='error' | awk "/$year-$month/ { print \$3 }")
-echo "[`date`] --- Errored jobs: $errored"
+errored_raw=$(gxadmin query monthly-jobs --year=$year --month=$month --state='error' | awk "/$year-$month/ { print \$3 }")
+errored=$(format_for_sql_number "$errored_raw")
+echo "[`date`] --- Errored jobs: $errored_raw (SQL: $errored)"
 
-errored_by_new_users=$(gxadmin query monthly-jobs-by-new-users $year-$month --state='error' | awk "/$year-$month/ { print \$5 }")
-echo "[`date`] --- Errored jobs by new users: $errored_by_new_users"
+errored_by_new_users_raw=$(gxadmin query monthly-jobs-by-new-users $year-$month --state='error' | awk "/$year-$month/ { print \$5 }")
+errored_by_new_users=$(format_for_sql_number "$errored_by_new_users_raw")
+echo "[`date`] --- Errored jobs by new users: $errored_by_new_users_raw (SQL: $errored_by_new_users)"
 
 
 # Check if entries for the given month already exist in BQ
@@ -123,26 +148,31 @@ fi
 
 # Get usage data
 echo "[`date`] -- Getting usage data."
-num_histories=$(gxadmin query history-count $next_month | awk '/[0-9]+$/ { print $1 }')
-echo "[`date`] --- Histories: $num_histories"
+num_histories_raw=$(gxadmin query history-count $next_month | awk '/[0-9]+$/ { print $1 }')
+num_histories=$(format_for_sql_number "$num_histories_raw")
+echo "[`date`] --- Histories: $num_histories_raw (SQL: $num_histories)"
 
-num_datasets=$(gxadmin query dataset-count $next_month | awk '/[0-9]+$/ { print $1 }')
-echo "[`date`] --- Datasets: $num_datasets"
+num_datasets_raw=$(gxadmin query dataset-count $next_month | awk '/[0-9]+$/ { print $1 }')
+num_datasets=$(format_for_sql_number "$num_datasets_raw")
+echo "[`date`] --- Datasets: $num_datasets_raw (SQL: $num_datasets)"
 
-num_workflows=$(gxadmin query workflow-count $next_month | awk '/[0-9]+$/ { print $1 }')
-echo "[`date`] --- Workflows: $num_workflows"
+num_workflows_raw=$(gxadmin query workflow-count $next_month | awk '/[0-9]+$/ { print $1 }')
+num_workflows=$(format_for_sql_number "$num_workflows_raw")
+echo "[`date`] --- Workflows: $num_workflows_raw (SQL: $num_workflows)"
 
-num_workflow_invocations=$(gxadmin query workflow-invocation-count $next_month | awk '/[0-9]+$/ { print $1 }')
-echo "[`date`] --- Workflow invocations: $num_workflow_invocations"
+num_workflow_invocations_raw=$(gxadmin query workflow-invocation-count $next_month | awk '/[0-9]+$/ { print $1 }')
+num_workflow_invocations=$(format_for_sql_number "$num_workflow_invocations_raw")
+echo "[`date`] --- Workflow invocations: $num_workflow_invocations_raw (SQL: $num_workflow_invocations)"
 
-num_tool_installs=$(curl -sS "$galaxy_server"/api/tools?in_panel=false | jq '[.[] | select(has("id") and .hidden == "")] | length')
-echo "[`date`] --- Tool installs: $num_tool_installs"
+num_tool_installs_raw=$(curl -sS "$galaxy_server"/api/tools?in_panel=false | jq '[.[] | select(has("id") and .hidden == "")] | length')
+num_tool_installs=$(format_for_sql_number "$num_tool_installs_raw")
+echo "[`date`] --- Tool installs: $num_tool_installs_raw (SQL: $num_tool_installs)"
 
 # Check if entries for the given month already exist in BQ
 check_usage_query="SELECT COUNT(*) FROM \`$PROJECT_ID\`.$DATASET.\`$USAGE_TABLE\` WHERE month='$year-$month-01'"
 # echo "[`date`] -- $check_usage_query"
 usage_entry_exists=$(bq query --use_legacy_sql=false --project_id="$PROJECT_ID" --format=csv "$check_usage_query" | awk '/[0-9]+$/ { print $1 }')
-echo "[`date`] -- Usage data for $year-$month exists in BQ: $check_usage_query"
+echo "[`date`] -- Usage data for $year-$month exists in BQ: $usage_entry_exists"
 
 # If entry for the given month does not exist, insert data. Otherwise, update the values.
 if [ "$usage_entry_exists" -eq 0 ]; then
