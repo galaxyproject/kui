@@ -1,0 +1,856 @@
+{
+  "contractVersion": "1.0.0",
+  "status": "frozen_for_initial_implementation",
+  "minimumGalaxyRelease": "26.1",
+  "envelope": [
+    {
+      "name": "bundle_id",
+      "type": "uuid",
+      "nullable": false
+    },
+    {
+      "name": "server_id",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "source_epoch",
+      "type": "string",
+      "nullable": false
+    },
+    {
+      "name": "observation_generation",
+      "type": "int64",
+      "nullable": false
+    },
+    {
+      "name": "part_index",
+      "type": "int64",
+      "nullable": false
+    }
+  ],
+  "components": {
+    "jobs": {
+      "grain": "One observed source job",
+      "source": "job",
+      "key": [
+        "job_id"
+      ],
+      "fields": [
+        {
+          "name": "job_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "create_time",
+          "type": "utc_timestamp",
+          "nullable": true
+        },
+        {
+          "name": "update_time",
+          "type": "utc_timestamp",
+          "nullable": true
+        },
+        {
+          "name": "state_raw",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "tool_id_raw",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "tool_version",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "galaxy_version",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "destination_id",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "handler",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "runner_name",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "user_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "exit_code",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "copied_from_job_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "imported",
+          "type": "boolean",
+          "nullable": true
+        }
+      ]
+    },
+    "numeric_metrics": {
+      "grain": "One source metric row, including duplicate metric keys",
+      "source": "job_metric_numeric",
+      "key": [
+        "metric_id"
+      ],
+      "fields": [
+        {
+          "name": "metric_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "job_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "plugin",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "metric_name",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "metric_value_raw",
+          "type": "decimal_text",
+          "nullable": true
+        }
+      ]
+    },
+    "users": {
+      "grain": "One source account observation; independent user selection includes pre-floor accounts",
+      "source": "galaxy_user",
+      "key": [
+        "user_id"
+      ],
+      "fields": [
+        {
+          "name": "user_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "create_time",
+          "type": "utc_timestamp",
+          "nullable": true
+        },
+        {
+          "name": "update_time",
+          "type": "utc_timestamp",
+          "nullable": true
+        },
+        {
+          "name": "deleted",
+          "type": "boolean",
+          "nullable": true
+        },
+        {
+          "name": "purged",
+          "type": "boolean",
+          "nullable": true
+        },
+        {
+          "name": "active",
+          "type": "boolean",
+          "nullable": true
+        }
+      ]
+    },
+    "job_states": {
+      "grain": "One source job state-history row",
+      "source": "job_state_history",
+      "key": [
+        "state_history_id"
+      ],
+      "fields": [
+        {
+          "name": "state_history_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "job_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "create_time",
+          "type": "utc_timestamp",
+          "nullable": true
+        },
+        {
+          "name": "state_raw",
+          "type": "string",
+          "nullable": true
+        }
+      ]
+    },
+    "job_datasets": {
+      "grain": "One source job-dataset association; unresolved references retained",
+      "source": "job_to_input_dataset / job_to_output_dataset / library equivalents",
+      "key": [
+        "association_type",
+        "association_id"
+      ],
+      "fields": [
+        {
+          "name": "association_type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "association_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "job_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "direction",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "role_raw",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "dataset_instance_type",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "dataset_instance_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "dataset_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "dataset_version",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "resolution_status",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    "job_collections": {
+      "grain": "One source job-collection or job-element association",
+      "source": "job collection association tables",
+      "key": [
+        "association_type",
+        "association_id"
+      ],
+      "fields": [
+        {
+          "name": "association_type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "association_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "job_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "direction",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "role_raw",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "collection_instance_type",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "collection_instance_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "collection_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "element_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "resolution_status",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    "collection_elements": {
+      "grain": "One reachable source collection element; repeated parents retained as topology",
+      "source": "dataset_collection_element",
+      "key": [
+        "element_id"
+      ],
+      "fields": [
+        {
+          "name": "element_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "collection_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "element_index",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "child_collection_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "hda_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "ldda_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "resolution_status",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    "dataset_features": {
+      "grain": "One dataset-instance/version selection for this source snapshot",
+      "source": "HDA/LDDA and matching retained HDA history where supported, joined to dataset",
+      "key": [
+        "dataset_instance_type",
+        "dataset_instance_id",
+        "requested_version",
+        "version_status"
+      ],
+      "fields": [
+        {
+          "name": "dataset_instance_type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "dataset_instance_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "dataset_id",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "requested_version",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "observed_version",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "version_status",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "extension",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "dbkey_values_json",
+          "type": "json_array_text",
+          "nullable": true
+        },
+        {
+          "name": "dbkey_status",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "file_size",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "total_size",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "dataset_state",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "dataset_deleted",
+          "type": "boolean",
+          "nullable": true
+        },
+        {
+          "name": "dataset_purged",
+          "type": "boolean",
+          "nullable": true
+        },
+        {
+          "name": "metadata_encoding",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "metadata_status",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "source_update_time",
+          "type": "utc_timestamp",
+          "nullable": true
+        },
+        {
+          "name": "job_time_correspondence",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    "dataset_numeric_features": {
+      "grain": "One approved numeric feature per dataset-instance/version selection",
+      "source": "Selected decoded datatype metadata only",
+      "key": [
+        "dataset_instance_type",
+        "dataset_instance_id",
+        "requested_version",
+        "version_status",
+        "feature_name"
+      ],
+      "fields": [
+        {
+          "name": "dataset_instance_type",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "dataset_instance_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "requested_version",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "observed_version",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "version_status",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "feature_name",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "value_raw",
+          "type": "decimal_text",
+          "nullable": true
+        },
+        {
+          "name": "unit",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "value_status",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    "failure_evidence": {
+      "grain": "One approved structured observation attached to a job; no inferred attempt identity",
+      "source": "Approved structured job_messages fields and numeric metrics",
+      "key": [
+        "job_id",
+        "evidence_source",
+        "evidence_index"
+      ],
+      "fields": [
+        {
+          "name": "job_id",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "evidence_source",
+          "type": "string",
+          "nullable": false
+        },
+        {
+          "name": "evidence_index",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "code_raw",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "exit_code",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "severity_raw",
+          "type": "decimal_text",
+          "nullable": true
+        },
+        {
+          "name": "limit_value_raw",
+          "type": "decimal_text",
+          "nullable": true
+        },
+        {
+          "name": "limit_unit_raw",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "enforcement_status",
+          "type": "string",
+          "nullable": true
+        },
+        {
+          "name": "evidence_status",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    },
+    "storage": {
+      "grain": "One server storage observation at actual collection time",
+      "source": "Scoped dataset aggregate",
+      "key": [
+        "observation_time"
+      ],
+      "fields": [
+        {
+          "name": "observation_time",
+          "type": "utc_timestamp",
+          "nullable": false
+        },
+        {
+          "name": "known_bytes",
+          "type": "int64",
+          "nullable": true
+        },
+        {
+          "name": "included_dataset_count",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "unknown_size_count",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "fallback_size_count",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "scope_exception_count",
+          "type": "int64",
+          "nullable": false
+        },
+        {
+          "name": "definition_version",
+          "type": "string",
+          "nullable": false
+        }
+      ]
+    }
+  },
+  "numericMetricAllowList": [
+    {
+      "plugin": "core",
+      "metricName": "runtime_seconds"
+    },
+    {
+      "plugin": "core",
+      "metricName": "galaxy_slots"
+    },
+    {
+      "plugin": "core",
+      "metricName": "galaxy_memory_mb"
+    },
+    {
+      "plugin": "core",
+      "metricName": "start_epoch"
+    },
+    {
+      "plugin": "core",
+      "metricName": "end_epoch"
+    },
+    {
+      "plugin": "core",
+      "metricName": "resubmission_count"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "cpuacct.usage"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "cpu.stat.usage_usec"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "cpu.stat.user_usec"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "cpu.stat.system_usec"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.max_usage_in_bytes"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.peak"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.memsw.max_usage_in_bytes"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.limit_in_bytes"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.memsw.limit_in_bytes"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.max"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.failcnt"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.events.oom"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.events.oom_kill"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.oom_control.oom_kill"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.oom_control.oom_kill_disable"
+    },
+    {
+      "plugin": "cgroup",
+      "metricName": "memory.oom_control.under_oom"
+    },
+    {
+      "plugin": "cpuinfo",
+      "metricName": "processor_count"
+    },
+    {
+      "plugin": "meminfo",
+      "metricName": "memtotal"
+    },
+    {
+      "plugin": "meminfo",
+      "metricName": "swaptotal"
+    }
+  ],
+  "textMetricAllowList": [],
+  "numericMetadataAllowList": [
+    "sequences",
+    "reads",
+    "data_lines",
+    "columns"
+  ],
+  "referenceMetadataAllowList": [
+    "dbkey"
+  ],
+  "failureMessageAllowList": {
+    "types": [
+      "regex",
+      "exit_code",
+      "max_discovered_files",
+      "output_collection_security",
+      "output_discovery",
+      "stdio_read_error",
+      "unknown_datatype",
+      "runtime_environment_warning"
+    ],
+    "fields": [
+      "type",
+      "error_level",
+      "exit_code"
+    ],
+    "excludedFields": [
+      "desc",
+      "code_desc",
+      "match",
+      "stream",
+      "variable_names"
+    ]
+  },
+  "statusValues": {
+    "metadata_encoding": [
+      "json_utf8",
+      "legacy_pickle",
+      "missing",
+      "unknown"
+    ],
+    "metadata_status": [
+      "available",
+      "missing",
+      "unsupported_encoding",
+      "invalid_utf8",
+      "invalid_json",
+      "oversize"
+    ],
+    "version_status": [
+      "matched_history",
+      "matched_current",
+      "current_fallback",
+      "missing_instance",
+      "missing_version",
+      "not_recorded"
+    ],
+    "dbkey_status": [
+      "available",
+      "unspecified",
+      "missing",
+      "unsupported_encoding",
+      "invalid_value"
+    ],
+    "value_status": [
+      "available",
+      "missing",
+      "ambiguous_default",
+      "invalid_value",
+      "unsupported_encoding",
+      "version_unavailable"
+    ],
+    "job_time_correspondence": [
+      "matched_recorded_version",
+      "current_observation_only",
+      "unknown"
+    ],
+    "enforcement_status": [
+      "known_enforced",
+      "known_not_enforced",
+      "unknown"
+    ],
+    "resolution_status": [
+      "resolved",
+      "missing_reference",
+      "unsupported_relationship",
+      "cycle",
+      "depth_limit"
+    ]
+  },
+  "wireFormat": {
+    "format": "csv",
+    "encoding": "UTF8",
+    "header": true,
+    "delimiter": ",",
+    "quote": "\"",
+    "lineTerminator": "LF",
+    "compression": "gzip",
+    "nullMarker": "__gxrdb_null_<bundle UUID>__",
+    "rejectLiteralNullMarkerCollision": true
+  },
+  "excludedSources": [
+    "job_parameter",
+    "tool_state",
+    "command_line",
+    "environment",
+    "stdout",
+    "stderr",
+    "dataset_contents"
+  ]
+}

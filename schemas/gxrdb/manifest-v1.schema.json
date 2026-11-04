@@ -1,0 +1,352 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "gxrdb completion manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "bundleId",
+    "serverId",
+    "sourceEpoch",
+    "observationGeneration",
+    "observedAt",
+    "csvNullMarker",
+    "source",
+    "selection",
+    "requestedComponents",
+    "components"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "1.0.0"
+    },
+    "bundleId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "serverId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$"
+    },
+    "sourceEpoch": {
+      "type": "string",
+      "minLength": 1
+    },
+    "observationGeneration": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{0,18}$"
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "csvNullMarker": {
+      "type": "string",
+      "pattern": "^__gxrdb_null_[0-9a-f-]{36}__$"
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "galaxyRelease",
+        "postgresqlVersion",
+        "gxadminVersion",
+        "exporterBuild",
+        "capabilitiesSha256",
+        "snapshotId",
+        "timestampInterpretation"
+      ],
+      "properties": {
+        "galaxyRelease": {
+          "type": "string"
+        },
+        "postgresqlVersion": {
+          "type": "string"
+        },
+        "gxadminVersion": {
+          "type": "string"
+        },
+        "exporterBuild": {
+          "type": "string",
+          "minLength": 1
+        },
+        "capabilitiesSha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "snapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timestampInterpretation": {
+          "const": "UTC"
+        }
+      }
+    },
+    "selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "entity",
+        "mode"
+      ],
+      "properties": {
+        "entity": {
+          "enum": [
+            "jobs",
+            "users",
+            "storage"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "id_range",
+            "id_list",
+            "observation"
+          ]
+        },
+        "lowExclusive": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "highInclusive": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]{0,18})$"
+        },
+        "ids": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50000,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]{0,18})$"
+          }
+        }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "mode": {
+              "const": "id_range"
+            },
+            "entity": {
+              "enum": [
+                "jobs",
+                "users"
+              ]
+            }
+          },
+          "required": [
+            "lowExclusive",
+            "highInclusive"
+          ],
+          "not": {
+            "required": [
+              "ids"
+            ]
+          }
+        },
+        {
+          "properties": {
+            "mode": {
+              "const": "id_list"
+            },
+            "entity": {
+              "enum": [
+                "jobs",
+                "users"
+              ]
+            }
+          },
+          "required": [
+            "ids"
+          ],
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lowExclusive"
+                ]
+              },
+              {
+                "required": [
+                  "highInclusive"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "mode": {
+              "const": "observation"
+            },
+            "entity": {
+              "const": "storage"
+            }
+          },
+          "not": {
+            "anyOf": [
+              {
+                "required": [
+                  "lowExclusive"
+                ]
+              },
+              {
+                "required": [
+                  "highInclusive"
+                ]
+              },
+              {
+                "required": [
+                  "ids"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "requestedComponents": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "jobs",
+          "numeric_metrics",
+          "users",
+          "job_states",
+          "job_datasets",
+          "job_collections",
+          "collection_elements",
+          "dataset_features",
+          "dataset_numeric_features",
+          "failure_evidence",
+          "storage"
+        ]
+      }
+    },
+    "components": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "schemaVersion",
+          "status",
+          "rows",
+          "parts"
+        ],
+        "properties": {
+          "name": {
+            "enum": [
+              "jobs",
+              "numeric_metrics",
+              "users",
+              "job_states",
+              "job_datasets",
+              "job_collections",
+              "collection_elements",
+              "dataset_features",
+              "dataset_numeric_features",
+              "failure_evidence",
+              "storage"
+            ]
+          },
+          "schemaVersion": {
+            "const": 1
+          },
+          "status": {
+            "enum": [
+              "complete",
+              "unsupported"
+            ]
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rows": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "parts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "partIndex",
+                "file",
+                "rows",
+                "compressedBytes",
+                "sha256"
+              ],
+              "properties": {
+                "partIndex": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "file": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*-[0-9]{5}\\.csv\\.gz$"
+                },
+                "rows": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "compressedBytes": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            }
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "unsupported"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "reason"
+              ],
+              "properties": {
+                "rows": {
+                  "const": 0
+                },
+                "parts": {
+                  "maxItems": 0
+                }
+              }
+            },
+            "else": {
+              "properties": {
+                "parts": {
+                  "minItems": 1
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

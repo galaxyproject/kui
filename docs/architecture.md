@@ -78,5 +78,7 @@ This path is planned, not implemented. The current collector and fetch script
 still use monthly aggregate tables. Migrate indicators individually, retaining
 existing sources until replacement definitions, coverage, and counts are validated.
 The planned metric contracts are described in [metrics.md](metrics.md).
+The source bundle contract for initial implementation is specified in
+[gxrdb-export-contract.md](gxrdb-export-contract.md).
 
 Operational setup and release checks are in [operations.md](operations.md).
