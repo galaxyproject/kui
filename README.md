@@ -48,6 +48,12 @@ any Google Cloud credentials.
 Derived metrics are computed in the browser rather than baked into the
 snapshots, because they depend on the date range the visitor selects.
 
+Detailed documentation:
+
+- [Architecture and data flow](docs/architecture.md)
+- [Collection, refresh, and deployment](docs/operations.md)
+- [Metric definitions and planned collection contracts](docs/metrics.md)
+
 ### Refreshing the data
 
 ```bash
