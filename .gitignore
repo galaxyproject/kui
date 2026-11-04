@@ -4,3 +4,4 @@ dist/
 .env
 .DS_Store
 ea-no-commit/
+AGENTS.md

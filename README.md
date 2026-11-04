@@ -20,6 +20,9 @@ GitHub Action (cron, 3rd) ──fetch-data──────┘
 
 ## Working on the site
 
+Use the Node version in `.nvmrc` (`nvm install && nvm use`), or another
+supported version listed in `package.json`.
+
 ```bash
 npm ci
 npm run dev        # http://localhost:4321/kui/
