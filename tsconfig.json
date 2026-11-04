@@ -1,0 +1,10 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*.ts", "**/*.tsx", "**/*.astro", "**/*.vue"],
+  "exclude": ["dist", "node_modules"],
+  "compilerOptions": {
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "types": ["vitest/globals"]
+  }
+}

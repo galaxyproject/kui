@@ -1,0 +1,20 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import AggregateDashboard from '../components/dashboards/AggregateDashboard.vue';
+import { servers } from '../lib/registry';
+import { snapshotFor } from '../lib/snapshots';
+
+const inputs = servers.map((server) => ({ server, snapshot: snapshotFor(server.id) }));
+---
+
+<BaseLayout title="usegalaxy.* Key Usage Indicators">
+  <SiteHeader
+    title="usegalaxy.* aggregate data"
+    subtitle="Combined monthly usage across all reporting Galaxy servers."
+    active="aggregate"
+  />
+  <main class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <AggregateDashboard inputs={inputs} client:load />
+  </main>
+</BaseLayout>

@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-04T14:48:07.523Z",
+  "servers": [
+    {
+      "server": "usegalaxy-org",
+      "firstMonth": "2022-05",
+      "latestMonth": "2026-10",
+      "monthCount": 54
+    },
+    {
+      "server": "usegalaxy-eu",
+      "firstMonth": "2023-05",
+      "latestMonth": "2026-10",
+      "monthCount": 42
+    },
+    {
+      "server": "usegalaxy-au",
+      "firstMonth": "2022-09",
+      "latestMonth": "2026-10",
+      "monthCount": 50
+    },
+    {
+      "server": "usegalaxy-fr",
+      "firstMonth": "2023-06",
+      "latestMonth": "2026-10",
+      "monthCount": 41
+    },
+    {
+      "server": "usegalaxy-ca",
+      "firstMonth": "2023-09",
+      "latestMonth": "2026-09",
+      "monthCount": 37
+    },
+    {
+      "server": "usegalaxy-be",
+      "firstMonth": "2025-10",
+      "latestMonth": "2026-10",
+      "monthCount": 13
+    }
+  ]
+}

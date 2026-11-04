@@ -1,0 +1,38 @@
+---
+import ServerNav from './ServerNav.astro';
+import { withBase } from '../lib/paths';
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  active: string;
+  serverUrl?: string;
+}
+
+const { title, subtitle, active, serverUrl } = Astro.props;
+---
+
+<header class="bg-galaxy-dark text-white">
+  <div class="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+    <div class="flex flex-wrap items-baseline justify-between gap-4">
+      <a href={withBase('/')} class="text-lg font-bold text-galaxy-gold">
+        usegalaxy.* Key Usage Indicators
+      </a>
+      <ServerNav active={active} />
+    </div>
+    <div class="mt-6">
+      <h1 class="text-3xl sm:text-4xl">
+        {
+          serverUrl ? (
+            <a href={serverUrl} class="italic underline decoration-galaxy-gold underline-offset-4">
+              {title}
+            </a>
+          ) : (
+            <span class="italic">{title}</span>
+          )
+        }
+      </h1>
+      {subtitle && <p class="mt-1 text-sm text-white/70">{subtitle}</p>}
+    </div>
+  </div>
+</header>

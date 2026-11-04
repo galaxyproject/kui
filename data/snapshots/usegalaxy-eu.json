@@ -1,0 +1,1057 @@
+{
+  "schemaVersion": 1,
+  "server": "usegalaxy-eu",
+  "generatedAt": "2026-11-04T14:48:07.523Z",
+  "months": [
+    {
+      "month": "2023-05",
+      "users": {
+        "total_registered": 70721,
+        "new_registrations": 2372,
+        "engaged": 4960,
+        "engaged_day_plus": 2913,
+        "new_engaged_day_plus": 834
+      },
+      "jobs": {
+        "total_jobs": 60450055,
+        "month_jobs": 1053281,
+        "by_new_users": 227289,
+        "by_new_users_engaged_day_plus": 210785,
+        "errored": 60768,
+        "errored_by_new_users": 10548
+      },
+      "usage": {
+        "total_histories": 1492927,
+        "total_datasets": 112723395,
+        "total_workflows": 207569,
+        "total_workflow_invocations": 332449,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2023-06",
+      "users": {
+        "total_registered": 72087,
+        "new_registrations": 1366,
+        "engaged": 3858,
+        "engaged_day_plus": 2375,
+        "new_engaged_day_plus": 612
+      },
+      "jobs": {
+        "total_jobs": 61050770,
+        "month_jobs": 600715,
+        "by_new_users": 93328,
+        "by_new_users_engaged_day_plus": 83623,
+        "errored": 33502,
+        "errored_by_new_users": 4491
+      },
+      "usage": {
+        "total_histories": 1570240,
+        "total_datasets": 114042172,
+        "total_workflows": 212515,
+        "total_workflow_invocations": 339411,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2023-07",
+      "users": {
+        "total_registered": 73372,
+        "new_registrations": 1285,
+        "engaged": 3462,
+        "engaged_day_plus": 2022,
+        "new_engaged_day_plus": 473
+      },
+      "jobs": {
+        "total_jobs": 61623060,
+        "month_jobs": 572290,
+        "by_new_users": 125312,
+        "by_new_users_engaged_day_plus": 117663,
+        "errored": 28969,
+        "errored_by_new_users": 5744
+      },
+      "usage": {
+        "total_histories": 1673326,
+        "total_datasets": 115275356,
+        "total_workflows": 216780,
+        "total_workflow_invocations": 345113,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2023-08",
+      "users": {
+        "total_registered": 74750,
+        "new_registrations": 1378,
+        "engaged": 3374,
+        "engaged_day_plus": 1927,
+        "new_engaged_day_plus": 489
+      },
+      "jobs": {
+        "total_jobs": 62211664,
+        "month_jobs": 588604,
+        "by_new_users": 82788,
+        "by_new_users_engaged_day_plus": 72631,
+        "errored": 37499,
+        "errored_by_new_users": 8522
+      },
+      "usage": {
+        "total_histories": 1820928,
+        "total_datasets": 116415473,
+        "total_workflows": 220638,
+        "total_workflow_invocations": 350072,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2023-09",
+      "users": {
+        "total_registered": 76916,
+        "new_registrations": 2166,
+        "engaged": 4197,
+        "engaged_day_plus": 2171,
+        "new_engaged_day_plus": 664
+      },
+      "jobs": {
+        "total_jobs": 62925273,
+        "month_jobs": 713609,
+        "by_new_users": 89221,
+        "by_new_users_engaged_day_plus": 69786,
+        "errored": 48549,
+        "errored_by_new_users": 5085
+      },
+      "usage": {
+        "total_histories": 1986679,
+        "total_datasets": 118049641,
+        "total_workflows": 225302,
+        "total_workflow_invocations": 355823,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2023-10",
+      "users": {
+        "total_registered": 79429,
+        "new_registrations": 2513,
+        "engaged": 5099,
+        "engaged_day_plus": 2864,
+        "new_engaged_day_plus": 1029
+      },
+      "jobs": {
+        "total_jobs": 64140455,
+        "month_jobs": 1215182,
+        "by_new_users": 109875,
+        "by_new_users_engaged_day_plus": 94653,
+        "errored": 71128,
+        "errored_by_new_users": 8943
+      },
+      "usage": {
+        "total_histories": 2183836,
+        "total_datasets": 120187779,
+        "total_workflows": 230636,
+        "total_workflow_invocations": 361955,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2023-11",
+      "users": {
+        "total_registered": 82629,
+        "new_registrations": 3200,
+        "engaged": 6206,
+        "engaged_day_plus": 3538,
+        "new_engaged_day_plus": 1318
+      },
+      "jobs": {
+        "total_jobs": 65211262,
+        "month_jobs": 1070807,
+        "by_new_users": 156564,
+        "by_new_users_engaged_day_plus": 130943,
+        "errored": 64796,
+        "errored_by_new_users": 9101
+      },
+      "usage": {
+        "total_histories": 2344165,
+        "total_datasets": 122172247,
+        "total_workflows": 238187,
+        "total_workflow_invocations": 369855,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2023-12",
+      "users": {
+        "total_registered": 84875,
+        "new_registrations": 2246,
+        "engaged": 5213,
+        "engaged_day_plus": 2648,
+        "new_engaged_day_plus": 745
+      },
+      "jobs": {
+        "total_jobs": 66027835,
+        "month_jobs": 816346,
+        "by_new_users": 176361,
+        "by_new_users_engaged_day_plus": 154649,
+        "errored": 63921,
+        "errored_by_new_users": 22427
+      },
+      "usage": {
+        "total_histories": 2479755,
+        "total_datasets": 123727541,
+        "total_workflows": 243623,
+        "total_workflow_invocations": 375411,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2024-01",
+      "users": {
+        "total_registered": 86909,
+        "new_registrations": 2034,
+        "engaged": 4592,
+        "engaged_day_plus": 2704,
+        "new_engaged_day_plus": 810
+      },
+      "jobs": {
+        "total_jobs": 66744987,
+        "month_jobs": 717152,
+        "by_new_users": 129044,
+        "by_new_users_engaged_day_plus": 116290,
+        "errored": 41528,
+        "errored_by_new_users": 5979
+      },
+      "usage": {
+        "total_histories": 2662622,
+        "total_datasets": 125087902,
+        "total_workflows": 249527,
+        "total_workflow_invocations": 381556,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2024-02",
+      "users": {
+        "total_registered": 89505,
+        "new_registrations": 2596,
+        "engaged": 5325,
+        "engaged_day_plus": 2951,
+        "new_engaged_day_plus": 971
+      },
+      "jobs": {
+        "total_jobs": 67419552,
+        "month_jobs": 674565,
+        "by_new_users": 151092,
+        "by_new_users_engaged_day_plus": 131863,
+        "errored": 37514,
+        "errored_by_new_users": 8188
+      },
+      "usage": {
+        "total_histories": 2806581,
+        "total_datasets": 126686942,
+        "total_workflows": 256040,
+        "total_workflow_invocations": 389107,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2024-03",
+      "users": {
+        "total_registered": 92551,
+        "new_registrations": 3046,
+        "engaged": 6292,
+        "engaged_day_plus": 3609,
+        "new_engaged_day_plus": 1277
+      },
+      "jobs": {
+        "total_jobs": 68349236,
+        "month_jobs": 929684,
+        "by_new_users": 163591,
+        "by_new_users_engaged_day_plus": 141300,
+        "errored": 39930,
+        "errored_by_new_users": 9001
+      },
+      "usage": {
+        "total_histories": 3077460,
+        "total_datasets": 128374621,
+        "total_workflows": 263777,
+        "total_workflow_invocations": 397001,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2024-04",
+      "users": {
+        "total_registered": 95058,
+        "new_registrations": 2507,
+        "engaged": 5983,
+        "engaged_day_plus": 3449,
+        "new_engaged_day_plus": 1051
+      },
+      "jobs": {
+        "total_jobs": 69171556,
+        "month_jobs": 822320,
+        "by_new_users": 170193,
+        "by_new_users_engaged_day_plus": 153190,
+        "errored": 57871,
+        "errored_by_new_users": 14350
+      },
+      "usage": {
+        "total_histories": 3264972,
+        "total_datasets": 129997405,
+        "total_workflows": 270131,
+        "total_workflow_invocations": 405978,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2024-05",
+      "users": {
+        "total_registered": 97239,
+        "new_registrations": 2181,
+        "engaged": 5661,
+        "engaged_day_plus": 3404,
+        "new_engaged_day_plus": 922
+      },
+      "jobs": {
+        "total_jobs": 70374353,
+        "month_jobs": 1202797,
+        "by_new_users": 280013,
+        "by_new_users_engaged_day_plus": 258567,
+        "errored": 69336,
+        "errored_by_new_users": 10947
+      },
+      "usage": {
+        "total_histories": 3457522,
+        "total_datasets": 132284315,
+        "total_workflows": 277824,
+        "total_workflow_invocations": 415624,
+        "tool_installs": 12021
+      }
+    },
+    {
+      "month": "2024-06",
+      "users": {
+        "total_registered": 98876,
+        "new_registrations": 1637,
+        "engaged": 4701,
+        "engaged_day_plus": 2663,
+        "new_engaged_day_plus": 631
+      },
+      "jobs": {
+        "total_jobs": 71278868,
+        "month_jobs": 903735,
+        "by_new_users": 191085,
+        "by_new_users_engaged_day_plus": 176355,
+        "errored": 64113,
+        "errored_by_new_users": 10258
+      },
+      "usage": {
+        "total_histories": 3666933,
+        "total_datasets": 134010625,
+        "total_workflows": 228771,
+        "total_workflow_invocations": 423706,
+        "tool_installs": 12287
+      }
+    },
+    {
+      "month": "2024-07",
+      "users": {
+        "total_registered": 100477,
+        "new_registrations": 1601,
+        "engaged": 4320,
+        "engaged_day_plus": 2492,
+        "new_engaged_day_plus": 627
+      },
+      "jobs": {
+        "total_jobs": 72150906,
+        "month_jobs": 870107,
+        "by_new_users": 165373,
+        "by_new_users_engaged_day_plus": 148365,
+        "errored": 50199,
+        "errored_by_new_users": 8956
+      },
+      "usage": {
+        "total_histories": 3933684,
+        "total_datasets": 135733684,
+        "total_workflows": 233145,
+        "total_workflow_invocations": 432586,
+        "tool_installs": 12391
+      }
+    },
+    {
+      "month": "2024-08",
+      "users": {
+        "total_registered": 101824,
+        "new_registrations": 1347,
+        "engaged": 3730,
+        "engaged_day_plus": 2208,
+        "new_engaged_day_plus": 484
+      },
+      "jobs": {
+        "total_jobs": 72919971,
+        "month_jobs": 768850,
+        "by_new_users": 127307,
+        "by_new_users_engaged_day_plus": 113279,
+        "errored": 38774,
+        "errored_by_new_users": 9620
+      },
+      "usage": {
+        "total_histories": 4211788,
+        "total_datasets": 137471944,
+        "total_workflows": 237725,
+        "total_workflow_invocations": 443428,
+        "tool_installs": 12529
+      }
+    },
+    {
+      "month": "2024-09",
+      "users": {
+        "total_registered": 104084,
+        "new_registrations": 2260,
+        "engaged": 4875,
+        "engaged_day_plus": 2695,
+        "new_engaged_day_plus": 779
+      },
+      "jobs": {
+        "total_jobs": 73853336,
+        "month_jobs": 932956,
+        "by_new_users": 188602,
+        "by_new_users_engaged_day_plus": 174141,
+        "errored": 45171,
+        "errored_by_new_users": 16640
+      },
+      "usage": {
+        "total_histories": 4681935,
+        "total_datasets": 139292351,
+        "total_workflows": 242937,
+        "total_workflow_invocations": 453883,
+        "tool_installs": 12863
+      }
+    },
+    {
+      "month": "2024-10",
+      "users": {
+        "total_registered": 107470,
+        "new_registrations": 3384,
+        "engaged": 6363,
+        "engaged_day_plus": 3605,
+        "new_engaged_day_plus": 1279
+      },
+      "jobs": {
+        "total_jobs": 75060017,
+        "month_jobs": 1205667,
+        "by_new_users": 275357,
+        "by_new_users_engaged_day_plus": 257851,
+        "errored": 61595,
+        "errored_by_new_users": 10139
+      },
+      "usage": {
+        "total_histories": 5034842,
+        "total_datasets": 141720041,
+        "total_workflows": 248996,
+        "total_workflow_invocations": 465962,
+        "tool_installs": 13015
+      }
+    },
+    {
+      "month": "2024-11",
+      "users": {
+        "total_registered": 110694,
+        "new_registrations": 3224,
+        "engaged": 6849,
+        "engaged_day_plus": 3760,
+        "new_engaged_day_plus": 1172
+      },
+      "jobs": {
+        "total_jobs": 76237059,
+        "month_jobs": 1176624,
+        "by_new_users": 211237,
+        "by_new_users_engaged_day_plus": 176271,
+        "errored": 111621,
+        "errored_by_new_users": 54203
+      },
+      "usage": {
+        "total_histories": 5335188,
+        "total_datasets": 143931465,
+        "total_workflows": 255235,
+        "total_workflow_invocations": 480445,
+        "tool_installs": 13312
+      }
+    },
+    {
+      "month": "2024-12",
+      "users": {
+        "total_registered": 113125,
+        "new_registrations": 2431,
+        "engaged": 5734,
+        "engaged_day_plus": 3023,
+        "new_engaged_day_plus": 796
+      },
+      "jobs": {
+        "total_jobs": 77141724,
+        "month_jobs": 904565,
+        "by_new_users": 236714,
+        "by_new_users_engaged_day_plus": 87671,
+        "errored": 48017,
+        "errored_by_new_users": 15032
+      },
+      "usage": {
+        "total_histories": 5504190,
+        "total_datasets": 145900390,
+        "total_workflows": 259359,
+        "total_workflow_invocations": 489803,
+        "tool_installs": 13406
+      }
+    },
+    {
+      "month": "2025-01",
+      "users": {
+        "total_registered": 115486,
+        "new_registrations": 2361,
+        "engaged": 5449,
+        "engaged_day_plus": 3116,
+        "new_engaged_day_plus": 907
+      },
+      "jobs": {
+        "total_jobs": 78467934,
+        "month_jobs": 1318383,
+        "by_new_users": 184559,
+        "by_new_users_engaged_day_plus": 162647,
+        "errored": 53863,
+        "errored_by_new_users": 11651
+      },
+      "usage": {
+        "total_histories": 5784970,
+        "total_datasets": 148619085,
+        "total_workflows": 264041,
+        "total_workflow_invocations": 501619,
+        "tool_installs": 13453
+      }
+    },
+    {
+      "month": "2025-02",
+      "users": {
+        "total_registered": 118590,
+        "new_registrations": 3104,
+        "engaged": 6374,
+        "engaged_day_plus": 3506,
+        "new_engaged_day_plus": 1122
+      },
+      "jobs": {
+        "total_jobs": 79824460,
+        "month_jobs": 1355767,
+        "by_new_users": 233194,
+        "by_new_users_engaged_day_plus": 206507,
+        "errored": 59422,
+        "errored_by_new_users": 11292
+      },
+      "usage": {
+        "total_histories": 5995944,
+        "total_datasets": 151646104,
+        "total_workflows": 269473,
+        "total_workflow_invocations": 512651,
+        "tool_installs": 13589
+      }
+    },
+    {
+      "month": "2025-03",
+      "users": {
+        "total_registered": 122405,
+        "new_registrations": 3815,
+        "engaged": 7537,
+        "engaged_day_plus": 4263,
+        "new_engaged_day_plus": 1521
+      },
+      "jobs": {
+        "total_jobs": 81368864,
+        "month_jobs": 1543636,
+        "by_new_users": 277440,
+        "by_new_users_engaged_day_plus": 238661,
+        "errored": 68287,
+        "errored_by_new_users": 12907
+      },
+      "usage": {
+        "total_histories": 6253610,
+        "total_datasets": 154509132,
+        "total_workflows": 276865,
+        "total_workflow_invocations": 524896,
+        "tool_installs": 13812
+      }
+    },
+    {
+      "month": "2025-04",
+      "users": {
+        "total_registered": 126078,
+        "new_registrations": 3669,
+        "engaged": 7543,
+        "engaged_day_plus": 4123,
+        "new_engaged_day_plus": 1287
+      },
+      "jobs": {
+        "total_jobs": 82859180,
+        "month_jobs": 1487762,
+        "by_new_users": 242653,
+        "by_new_users_engaged_day_plus": 215990,
+        "errored": 60372,
+        "errored_by_new_users": 10524
+      },
+      "usage": {
+        "total_histories": 6714593,
+        "total_datasets": 157825522,
+        "total_workflows": 284358,
+        "total_workflow_invocations": 540069,
+        "tool_installs": 13878
+      }
+    },
+    {
+      "month": "2025-05",
+      "users": {
+        "total_registered": 129605,
+        "new_registrations": 3526,
+        "engaged": 7718,
+        "engaged_day_plus": 4361,
+        "new_engaged_day_plus": 1381
+      },
+      "jobs": {
+        "total_jobs": 84228977,
+        "month_jobs": 1366767,
+        "by_new_users": 322894,
+        "by_new_users_engaged_day_plus": 280346,
+        "errored": 63451,
+        "errored_by_new_users": 16968
+      },
+      "usage": {
+        "total_histories": 7041529,
+        "total_datasets": 160687403,
+        "total_workflows": 292410,
+        "total_workflow_invocations": 556540,
+        "tool_installs": 14119
+      }
+    },
+    {
+      "month": "2025-06",
+      "users": {
+        "total_registered": 132369,
+        "new_registrations": 2763,
+        "engaged": 6653,
+        "engaged_day_plus": 3717,
+        "new_engaged_day_plus": 1111
+      },
+      "jobs": {
+        "total_jobs": 85391090,
+        "month_jobs": 1158822,
+        "by_new_users": 202653,
+        "by_new_users_engaged_day_plus": 180963,
+        "errored": 86992,
+        "errored_by_new_users": 15936
+      },
+      "usage": {
+        "total_histories": 7424555,
+        "total_datasets": 167204059,
+        "total_workflows": 298374,
+        "total_workflow_invocations": 571500,
+        "tool_installs": 14293
+      }
+    },
+    {
+      "month": "2025-07",
+      "users": {
+        "total_registered": 134569,
+        "new_registrations": 2199,
+        "engaged": 5622,
+        "engaged_day_plus": 3183,
+        "new_engaged_day_plus": 806
+      },
+      "jobs": {
+        "total_jobs": 86737795,
+        "month_jobs": 1346558,
+        "by_new_users": 162584,
+        "by_new_users_engaged_day_plus": 122205,
+        "errored": 51615,
+        "errored_by_new_users": 12274
+      },
+      "usage": {
+        "total_histories": 7933746,
+        "total_datasets": 171513641,
+        "total_workflows": 304008,
+        "total_workflow_invocations": 582970,
+        "tool_installs": 14583
+      }
+    },
+    {
+      "month": "2025-08",
+      "users": {
+        "total_registered": 136539,
+        "new_registrations": 1970,
+        "engaged": 5172,
+        "engaged_day_plus": 2888,
+        "new_engaged_day_plus": 708
+      },
+      "jobs": {
+        "total_jobs": 87769437,
+        "month_jobs": 1029413,
+        "by_new_users": 209988,
+        "by_new_users_engaged_day_plus": 195057,
+        "errored": 59512,
+        "errored_by_new_users": 12313
+      },
+      "usage": {
+        "total_histories": 8318732,
+        "total_datasets": 173986935,
+        "total_workflows": 309138,
+        "total_workflow_invocations": 596666,
+        "tool_installs": 14735
+      }
+    },
+    {
+      "month": "2025-09",
+      "users": {
+        "total_registered": 140011,
+        "new_registrations": 3472,
+        "engaged": 6849,
+        "engaged_day_plus": 3814,
+        "new_engaged_day_plus": 1372
+      },
+      "jobs": {
+        "total_jobs": 88836382,
+        "month_jobs": 1066054,
+        "by_new_users": 201359,
+        "by_new_users_engaged_day_plus": 176396,
+        "errored": 79913,
+        "errored_by_new_users": 16590
+      },
+      "usage": {
+        "total_histories": 8975806,
+        "total_datasets": 176573918,
+        "total_workflows": 314839,
+        "total_workflow_invocations": 609919,
+        "tool_installs": 14801
+      }
+    },
+    {
+      "month": "2025-10",
+      "users": {
+        "total_registered": 144356,
+        "new_registrations": 4344,
+        "engaged": 8501,
+        "engaged_day_plus": 4766,
+        "new_engaged_day_plus": 1777
+      },
+      "jobs": {
+        "total_jobs": 91012131,
+        "month_jobs": 2173274,
+        "by_new_users": 292703,
+        "by_new_users_engaged_day_plus": 258828,
+        "errored": 78601,
+        "errored_by_new_users": 15641
+      },
+      "usage": {
+        "total_histories": 9332478,
+        "total_datasets": 179820240,
+        "total_workflows": 323640,
+        "total_workflow_invocations": 624318,
+        "tool_installs": 14549
+      }
+    },
+    {
+      "month": "2025-11",
+      "users": {
+        "total_registered": 149260,
+        "new_registrations": 4904,
+        "engaged": 9603,
+        "engaged_day_plus": 5037,
+        "new_engaged_day_plus": 1609
+      },
+      "jobs": {
+        "total_jobs": 93277377,
+        "month_jobs": 2264043,
+        "by_new_users": 333333,
+        "by_new_users_engaged_day_plus": 287909,
+        "errored": 97803,
+        "errored_by_new_users": 32730
+      },
+      "usage": {
+        "total_histories": 9941656,
+        "total_datasets": 183845721,
+        "total_workflows": 331707,
+        "total_workflow_invocations": 642957,
+        "tool_installs": 14854
+      }
+    },
+    {
+      "month": "2025-12",
+      "users": {
+        "total_registered": 152389,
+        "new_registrations": 3129,
+        "engaged": 7929,
+        "engaged_day_plus": 4373,
+        "new_engaged_day_plus": 1184
+      },
+      "jobs": {
+        "total_jobs": 94876253,
+        "month_jobs": 1598076,
+        "by_new_users": 181121,
+        "by_new_users_engaged_day_plus": 158875,
+        "errored": 90491,
+        "errored_by_new_users": 16486
+      },
+      "usage": {
+        "total_histories": 10343228,
+        "total_datasets": 186805394,
+        "total_workflows": 338440,
+        "total_workflow_invocations": 657751,
+        "tool_installs": 14952
+      }
+    },
+    {
+      "month": "2026-01",
+      "users": {
+        "total_registered": 155436,
+        "new_registrations": 3047,
+        "engaged": 6794,
+        "engaged_day_plus": 3852,
+        "new_engaged_day_plus": 1175
+      },
+      "jobs": {
+        "total_jobs": 96112594,
+        "month_jobs": 1234669,
+        "by_new_users": 220367,
+        "by_new_users_engaged_day_plus": 203292,
+        "errored": 89642,
+        "errored_by_new_users": 19123
+      },
+      "usage": {
+        "total_histories": 10648050,
+        "total_datasets": 189689400,
+        "total_workflows": 344925,
+        "total_workflow_invocations": 669873,
+        "tool_installs": 15498
+      }
+    },
+    {
+      "month": "2026-02",
+      "users": {
+        "total_registered": 159246,
+        "new_registrations": 3810,
+        "engaged": 7692,
+        "engaged_day_plus": 4126,
+        "new_engaged_day_plus": 1289
+      },
+      "jobs": {
+        "total_jobs": 97462724,
+        "month_jobs": 1350130,
+        "by_new_users": 234078,
+        "by_new_users_engaged_day_plus": 203840,
+        "errored": 96544,
+        "errored_by_new_users": 24095
+      },
+      "usage": {
+        "total_histories": 10974159,
+        "total_datasets": 192839580,
+        "total_workflows": 353258,
+        "total_workflow_invocations": 684926,
+        "tool_installs": 15498
+      }
+    },
+    {
+      "month": "2026-03",
+      "users": {
+        "total_registered": 163284,
+        "new_registrations": 4038,
+        "engaged": 8923,
+        "engaged_day_plus": 4968,
+        "new_engaged_day_plus": 1594
+      },
+      "jobs": {
+        "total_jobs": 99276794,
+        "month_jobs": 1813613,
+        "by_new_users": 414742,
+        "by_new_users_engaged_day_plus": 375887,
+        "errored": 87774,
+        "errored_by_new_users": 20399
+      },
+      "usage": {
+        "total_histories": 11356887,
+        "total_datasets": 196988392,
+        "total_workflows": 363717,
+        "total_workflow_invocations": 705078,
+        "tool_installs": 8666
+      }
+    },
+    {
+      "month": "2026-04",
+      "users": {
+        "total_registered": 167681,
+        "new_registrations": 4397,
+        "engaged": 8926,
+        "engaged_day_plus": 4814,
+        "new_engaged_day_plus": 1578
+      },
+      "jobs": {
+        "total_jobs": 101066252,
+        "month_jobs": 1789458,
+        "by_new_users": 288304,
+        "by_new_users_engaged_day_plus": 231399,
+        "errored": 82808,
+        "errored_by_new_users": 19743
+      },
+      "usage": {
+        "total_histories": 12048621,
+        "total_datasets": 201598242,
+        "total_workflows": 372714,
+        "total_workflow_invocations": 721263,
+        "tool_installs": 8666
+      }
+    },
+    {
+      "month": "2026-05",
+      "users": {
+        "total_registered": 171521,
+        "new_registrations": 3840,
+        "engaged": 8553,
+        "engaged_day_plus": 4675,
+        "new_engaged_day_plus": 1396
+      },
+      "jobs": {
+        "total_jobs": 103671440,
+        "month_jobs": 2605188,
+        "by_new_users": 514067,
+        "by_new_users_engaged_day_plus": 467288,
+        "errored": 192966,
+        "errored_by_new_users": 24715
+      },
+      "usage": {
+        "total_histories": 12710925,
+        "total_datasets": 209520935,
+        "total_workflows": 382590,
+        "total_workflow_invocations": 738826,
+        "tool_installs": 8666
+      }
+    },
+    {
+      "month": "2026-06",
+      "users": {
+        "total_registered": 175010,
+        "new_registrations": 3489,
+        "engaged": 7880,
+        "engaged_day_plus": 4424,
+        "new_engaged_day_plus": 1359
+      },
+      "jobs": {
+        "total_jobs": 107073416,
+        "month_jobs": 3402003,
+        "by_new_users": 535754,
+        "by_new_users_engaged_day_plus": 478761,
+        "errored": 228875,
+        "errored_by_new_users": 108842
+      },
+      "usage": {
+        "total_histories": 13460241,
+        "total_datasets": 215530420,
+        "total_workflows": 389013,
+        "total_workflow_invocations": 753060,
+        "tool_installs": 8666
+      }
+    },
+    {
+      "month": "2026-07",
+      "users": {
+        "total_registered": 178190,
+        "new_registrations": 3180,
+        "engaged": 7128,
+        "engaged_day_plus": 4136,
+        "new_engaged_day_plus": 1285
+      },
+      "jobs": {
+        "total_jobs": 109666591,
+        "month_jobs": 2593175,
+        "by_new_users": 743915,
+        "by_new_users_engaged_day_plus": 692030,
+        "errored": 535913,
+        "errored_by_new_users": 409474
+      },
+      "usage": {
+        "total_histories": 15372604,
+        "total_datasets": 221695888,
+        "total_workflows": 396795,
+        "total_workflow_invocations": 770301,
+        "tool_installs": 8666
+      }
+    },
+    {
+      "month": "2026-08",
+      "users": {
+        "total_registered": 180981,
+        "new_registrations": 2791,
+        "engaged": 6404,
+        "engaged_day_plus": 3667,
+        "new_engaged_day_plus": 3667
+      },
+      "jobs": {
+        "total_jobs": null,
+        "month_jobs": 1695515,
+        "by_new_users": null,
+        "by_new_users_engaged_day_plus": 354601,
+        "errored": 1695515,
+        "errored_by_new_users": null
+      },
+      "usage": {
+        "total_histories": 21254683,
+        "total_datasets": 225577684,
+        "total_workflows": 401908,
+        "total_workflow_invocations": 783761,
+        "tool_installs": 8882
+      }
+    },
+    {
+      "month": "2026-09",
+      "users": {
+        "total_registered": 184861,
+        "new_registrations": 3880,
+        "engaged": 7479,
+        "engaged_day_plus": 4032,
+        "new_engaged_day_plus": 4032
+      },
+      "jobs": {
+        "total_jobs": null,
+        "month_jobs": null,
+        "by_new_users": null,
+        "by_new_users_engaged_day_plus": 270238,
+        "errored": 2317771,
+        "errored_by_new_users": null
+      },
+      "usage": {
+        "total_histories": 29658131,
+        "total_datasets": 229500584,
+        "total_workflows": 408519,
+        "total_workflow_invocations": 799526,
+        "tool_installs": 8882
+      }
+    },
+    {
+      "month": "2026-10",
+      "users": {
+        "total_registered": null,
+        "new_registrations": null,
+        "engaged": null,
+        "engaged_day_plus": null,
+        "new_engaged_day_plus": null
+      },
+      "jobs": {
+        "total_jobs": null,
+        "month_jobs": null,
+        "by_new_users": null,
+        "by_new_users_engaged_day_plus": null,
+        "errored": null,
+        "errored_by_new_users": null
+      },
+      "usage": {
+        "total_histories": null,
+        "total_datasets": null,
+        "total_workflows": null,
+        "total_workflow_invocations": null,
+        "tool_installs": 9117
+      }
+    }
+  ]
+}

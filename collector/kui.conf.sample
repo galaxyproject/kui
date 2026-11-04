@@ -1,0 +1,36 @@
+# Copy to kui.conf next to kui.sh (or point KUI_CONFIG at it) and edit.
+# kui.sh refuses to run without this file, so an unconfigured cron job can no
+# longer write to the shared -dev tables.
+
+# BigQuery destination. Table names are assigned when your server is onboarded;
+# they must match the entry in servers.yml at the repo root.
+PROJECT_ID="anvil-cost-modeling"
+DATASET="kui"
+USERS_TABLE="users-xx"
+JOBS_TABLE="jobs-xx"
+USAGE_TABLE="usage-xx"
+
+# Public URL of your Galaxy server; used for the installed-tools count.
+galaxy_server="https://usegalaxy.xx"
+
+# Path to the service account key issued when your server was onboarded.
+#
+# Strongly recommended over `gcloud auth login`. A service account has no
+# interactive session to expire, so the collector keeps working after a reboot
+# and does not depend on any particular person staying logged in. kui.sh
+# re-activates it on every run, so even a wiped credential cache recovers by
+# itself.
+#
+# Keep it readable only by the user that runs the cron job:
+#     sudo install -o galaxy -g galaxy -m 600 kui-xx.json /etc/kui/kui-sa.json
+SERVICE_ACCOUNT_KEY="/etc/kui/kui-sa.json"
+
+# Where gcloud keeps its credentials. Pin this if the cron job runs as a user
+# whose HOME is unset or differs from the interactive shell's -- otherwise
+# gcloud writes to one place and reads from another, which is a common cause of
+# "it works by hand but not from cron".
+export CLOUDSDK_CONFIG=/etc/kui/gcloud
+
+# Environment gxadmin and gcloud need. Adjust to your host.
+export PGDATABASE=galaxy_main
+export PATH=/path/to/google-cloud-sdk/bin/:$PATH

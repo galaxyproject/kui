@@ -1,0 +1,34 @@
+---
+import { servers } from '../lib/registry';
+import { snapshotIndex } from '../lib/snapshots';
+import { monthLabel } from '../lib/format';
+
+const freshness = servers.map((server) => ({
+  name: server.shortName,
+  latestMonth: snapshotIndex.servers.find((entry) => entry.server === server.id)?.latestMonth ?? null,
+}));
+
+const refreshed = new Date(snapshotIndex.generatedAt).toISOString().slice(0, 10);
+---
+
+<footer class="mt-16 border-t border-galaxy-border bg-white">
+  <div class="mx-auto max-w-7xl px-4 py-8 text-sm text-galaxy-muted sm:px-6 lg:px-8">
+    <p class="font-bold text-galaxy-dark">Data through</p>
+    <ul class="mt-2 flex flex-wrap gap-x-6 gap-y-1">
+      {
+        freshness.map((entry) => (
+          <li>
+            <span class="font-bold">{entry.name}</span>{' '}
+            {entry.latestMonth ? monthLabel(entry.latestMonth) : 'no data'}
+          </li>
+        ))
+      }
+    </ul>
+    <p class="mt-4">
+      Snapshots refreshed {refreshed}. Collected monthly by each server's admin and published from
+      <a class="text-galaxy-primary underline" href="https://github.com/galaxyproject/kui">
+        galaxyproject/kui</a
+      >.
+    </p>
+  </div>
+</footer>

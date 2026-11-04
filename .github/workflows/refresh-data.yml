@@ -1,0 +1,65 @@
+name: Refresh snapshots
+
+on:
+  # Servers push their own month on the 1st; the 3rd leaves two days of slack.
+  schedule:
+    - cron: '0 6 3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  id-token: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: anvil-cost-modeling
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.WIF_SERVICE_ACCOUNT }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - run: npm run fetch-data
+      - run: npm run validate-snapshots
+
+      - name: Commit refreshed snapshots
+        run: |
+          # generatedAt changes on every run, so ignore it when deciding
+          # whether there is anything worth committing.
+          changed=$(git diff -U0 -- data/snapshots \
+            | grep -E '^[+-][^+-]' \
+            | grep -cv '"generatedAt"' || true)
+          if [ "$changed" -eq 0 ]; then
+            echo "No snapshot changes."
+            git checkout -- data/snapshots
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/snapshots
+          git commit -m "data: refresh snapshots for $(date -u +%Y-%m)"
+          git push
+
+      - name: Open an issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # One open issue per failure streak, not one per run.
+          existing=$(gh issue list --label data-refresh --state open --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            gh issue create \
+              --label data-refresh \
+              --title "Snapshot refresh failed for $(date -u +%Y-%m)" \
+              --body "The scheduled refresh failed. Run log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          fi

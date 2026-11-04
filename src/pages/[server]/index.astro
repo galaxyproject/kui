@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import SiteHeader from '../../components/SiteHeader.astro';
+import ServerDashboard from '../../components/dashboards/ServerDashboard.vue';
+import { servers } from '../../lib/registry';
+import { snapshotFor } from '../../lib/snapshots';
+
+export function getStaticPaths() {
+  return servers.map((server) => ({
+    params: { server: server.id },
+    props: { server, snapshot: snapshotFor(server.id) },
+  }));
+}
+
+const { server, snapshot } = Astro.props;
+---
+
+<BaseLayout title={`${server.name} — Key Usage Indicators`}>
+  <SiteHeader
+    title={`${server.name} Key Usage Indicators`}
+    active={server.id}
+    serverUrl={server.url}
+  />
+  <main class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <ServerDashboard snapshot={snapshot} client:load />
+  </main>
+</BaseLayout>

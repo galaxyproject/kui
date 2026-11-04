@@ -1,0 +1,53 @@
+# Server registry — the single source of truth for KUI.
+#
+# Table names are explicit, never derived: usegalaxy.org predates the naming
+# convention and uses unsuffixed `users`/`jobs` plus `usage-us`.
+# A server whose table is not yet populated may omit that key.
+#
+# Adding a server: one entry here, then a snapshot refresh.
+
+project: anvil-cost-modeling
+dataset: kui
+
+servers:
+  - id: usegalaxy-org
+    name: usegalaxy.org
+    shortName: US
+    url: https://usegalaxy.org
+    color: "#f4761f"
+    tables: { users: users, jobs: jobs, usage: usage-us }
+
+  - id: usegalaxy-eu
+    name: usegalaxy.eu
+    shortName: EU
+    url: https://usegalaxy.eu
+    color: "#5ba85f"
+    tables: { users: users-eu, jobs: jobs-eu, usage: usage-eu }
+
+  - id: usegalaxy-au
+    name: usegalaxy.org.au
+    shortName: AU
+    url: https://usegalaxy.org.au
+    color: "#20b2c8"
+    tables: { users: users-au, jobs: jobs-au, usage: usage-au }
+
+  - id: usegalaxy-fr
+    name: usegalaxy.fr
+    shortName: FR
+    url: https://usegalaxy.fr
+    color: "#e8127f"
+    tables: { users: users-fr, jobs: jobs-fr, usage: usage-fr }
+
+  - id: usegalaxy-ca
+    name: usegalaxy.ca
+    shortName: CA
+    url: https://usegalaxy.ca
+    color: "#25537b"
+    tables: { users: users-ca, jobs: jobs-ca, usage: usage-ca }
+
+  - id: usegalaxy-be
+    name: usegalaxy.be
+    shortName: BE
+    url: https://usegalaxy.be
+    color: "#8b5cf6"
+    tables: { users: users-be, jobs: jobs-be, usage: usage-be }

@@ -1,89 +1,143 @@
-# Key Usage Indicators data collection script
+# Key Usage Indicators (KUI)
 
-Key Usage Indicators (KUI) dashboard, an example available at
-[gxy.io/kui](https://gxy.io/kui), is a high-level dashboard summarizing usage
-information about Galaxy server(s). The dashboard presents up-to-date
-information about user registrations, service usage, and user jobs. Script
-`kui.sh` is used to collect data from Galaxy servers and store it in the
-BigQuery database, from where the dashboard is populated.
+The Key Usage Indicators dashboard summarizes monthly usage of usegalaxy.*
+Galaxy servers: user registrations, engagement, service usage, and jobs. It is
+published as a static site at [gxy.io/kui](https://gxy.io/kui).
 
-The dashboard focuses on displaying month-level data so the script is designed
-to be run every month.
+Two halves live in this repository:
 
-## Setup
+- **`collector/`** — `kui.sh`, run monthly by each server's admin, writes one
+  row per month into that server's BigQuery tables.
+- **the site** — an Astro + Vue app that renders committed JSON snapshots of
+  those tables. No database access is needed to build or contribute to it.
 
-### Local environment setup
-
-To run this script, you need
-[google-cloud-sdk](https://cloud.google.com/sdk/docs/install) installed and
-configured, including being authenticated. If you are being added to an existing
-GCP project, you will need to be added to the project as an *Editor* and also as
-an *BigQuery Data Editor* on the relevant table. The following is the sequence
-of commands you'll want to run to log in:
-
-```bash
-gcloud init
-gcloud config set project GCP_PROJECT_ID
+```
+Galaxy servers ──kui.sh (cron, 1st)──▶ BigQuery per-server tables
+                                            │
+GitHub Action (cron, 3rd) ──fetch-data──────┘
+  └─▶ commits JSON snapshots ─▶ Astro build ─▶ GitHub Pages
 ```
 
-You also need [`jq`](https://jqlang.github.io/jq/) and
-[`gxadmin`](https://github.com/galaxyproject/gxadmin) installed and configured.
-
-### BigQuery setup
-
-The KUI dashboard relies on a BigQuery (BQ) database to retrieve the data, which
-the `kui.sh` script populates with data from Galaxy. To set up BQ, you need to
-create a BQ `dataset` and three tables: `users`, `jobs`, and `usage`. The schema
-for each of the tables is available in the `json` files in this repository. You
-can use those to create the tables in your BQ dataset.
-
-### Configuration
-
-Before running the script, you need to set up the following variables at the top
-of the script: `PROJECT_ID`, `DATASET`, `USERS_TABLE`, `JOBS_TABLE`, and
-`USAGE_TABLE`. These are all BigQuery information fields we set up above.
-
-You may also need to set the following environment variable for gxadmin:
-`export PGDATABASE=galaxy_database_name`.
-
-### Dashboard
-
-The KUI dashboard is built using [Looker
-Studio](https://lookerstudio.google.com/). You can set up your own dashboard or,
-for the case of usegalaxy.* servers, be added to the
-[gxy.io/kui](https://gxy.io/kui) dashboard. Contact Enis Afgan for more
-information.
-
-## Usage
-
-Once the environment is configured, you can run the script with the following:
+## Working on the site
 
 ```bash
-./kui.sh [YYYY] [MM]
+npm ci
+npm run dev        # http://localhost:4321/kui/
+npm run build      # static output in dist/
+npm test           # metrics + aggregate unit tests
+npm run check      # astro/TypeScript diagnostics
 ```
 
-where `YYYY` is the year and `MM` is the month for which the data is collected.
-If not provided, the script will collect data for the previous month.
+Snapshots in `data/snapshots/` are committed, so all of the above works without
+any Google Cloud credentials.
 
-### Cron job setup
+### Layout
 
-Edit the crontab file with `crontab -e` and add the following line to run the
-script every month (create `~/kui_logs` directory if it doesn't exist or update
-the command to use a different directory):
+| Path | Purpose |
+| --- | --- |
+| `servers.yml` | Server registry — the single source of truth for which servers exist and which BigQuery tables hold their data. |
+| `data/snapshots/` | Committed JSON per server plus an `index.json` manifest. |
+| `src/lib/metrics.ts` | Derived metrics (averages, percentages, job-share split). Pure and unit-tested. |
+| `src/lib/aggregate.ts` | Cross-server month axis, per-server series, headline totals. |
+| `src/components/` | Astro shell, Vue dashboards, cards, ECharts wrappers. |
+| `scripts/fetch-data.mjs` | Reads BigQuery and rewrites the snapshots. |
+
+Derived metrics are computed in the browser rather than baked into the
+snapshots, because they depend on the date range the visitor selects.
+
+### Refreshing the data
 
 ```bash
-0 1 1 * * /path/to/kui.sh >> "~/kui_logs/kui-run-logs-$(date +\%Y\%m).log"
+gcloud auth application-default login   # once
+npm run fetch-data                       # all servers
+npm run fetch-data -- --server usegalaxy-eu
+npm run validate-snapshots
 ```
 
-You will also need to run the following `gcloud` command to set up credentials
-for the cron job. This needs to be done only once. Note that this is different
-from the `gcloud init` command you may have run in your local environment, as
-the cron job will need to use application default credentials to authenticate
-with GCP so the Python script can access BigQuery:
+In CI this runs monthly from `.github/workflows/refresh-data.yml`,
+authenticating to BigQuery through Workload Identity Federation, and commits the
+result — every refresh is a reviewable diff.
+
+### Adding a server
+
+1. Have the project owner create the three BigQuery tables (schemas in
+   `collector/schemas/`) and a service account scoped to just those tables:
+
+   ```bash
+   SITE=xx; PROJECT=anvil-cost-modeling
+   SA_EMAIL="kui-${SITE}@${PROJECT}.iam.gserviceaccount.com"
+
+   gcloud iam service-accounts create "kui-${SITE}" --project="$PROJECT" \
+     --display-name="KUI collector for usegalaxy.${SITE}"
+
+   # Write access to this site's three tables only
+   for t in "users-${SITE}" "jobs-${SITE}" "usage-${SITE}"; do
+     bq add-iam-policy-binding --member="serviceAccount:${SA_EMAIL}" \
+       --role=roles/bigquery.dataEditor "${PROJECT}:kui.${t}"
+   done
+
+   # Running a query job needs one project-level role
+   gcloud projects add-iam-policy-binding "$PROJECT" \
+     --member="serviceAccount:${SA_EMAIL}" --role=roles/bigquery.jobUser
+
+   gcloud iam service-accounts keys create "kui-${SITE}.json" \
+     --iam-account="$SA_EMAIL"
+   ```
+
+   Send the key to the site admin over a private channel. One account per site
+   keeps the existing isolation: a key can be revoked without affecting anyone
+   else, and it can only write that site's tables.
+2. The admin installs the collector (below) and backfills history.
+3. Open a PR adding an entry to `servers.yml` with the exact table names.
+4. After merge, dispatch the refresh workflow; the new page appears at
+   `/kui/<server-id>/`.
+
+## Running the collector
+
+Requires [`gxadmin`](https://github.com/galaxyproject/gxadmin),
+[`jq`](https://jqlang.github.io/jq/), and
+[google-cloud-sdk](https://cloud.google.com/sdk/docs/install).
+
+You will be issued a **service account key** when your server is onboarded.
+Install it, point the config at it, and no one ever has to be logged in:
 
 ```bash
-gcloud auth application-default login
+sudo install -d -m 750 -o galaxy -g galaxy /etc/kui
+sudo install -m 600 -o galaxy -g galaxy kui-xx.json /etc/kui/kui-sa.json
+
+cp collector/kui.conf.sample collector/kui.conf
+$EDITOR collector/kui.conf    # table names, galaxy_server, PGDATABASE,
+                              # SERVICE_ACCOUNT_KEY, CLOUDSDK_CONFIG
+./collector/kui.sh [YYYY] [MM]          # defaults to the previous month
 ```
 
-The above cron job will run the script at 1 AM on the first day of every month
-to automatically update the KUI dashboard with the latest data.
+`kui.sh` re-activates the service account on every run and checks BigQuery is
+reachable before touching the Galaxy database, so a failure is reported in
+seconds rather than after twenty minutes of queries.
+
+**Why a service account rather than `gcloud auth login`.** A user login is an
+interactive session that expires, gets revoked, or lives in a credential cache
+tied to one person's `$HOME` — which is why sites have had to re-authenticate
+after a reboot. A service account key is a file on disk with no session behind
+it. If the credential cache is wiped, the next run re-creates it from the key.
+
+If your cron job runs as a different user from your interactive shell, also set
+`CLOUDSDK_CONFIG` (see `kui.conf.sample`). gcloud writing to one credential
+directory and reading from another is the usual reason a collector works by hand
+and fails from cron.
+
+`kui.sh` refuses to run without a config file, so an unconfigured install can no
+longer write to the shared `-dev` tables. Settings live in `kui.conf` and not
+in the script, so `git pull` never conflicts with local edits.
+
+Backfill by looping over months, then add a cron entry:
+
+```bash
+0 1 1 * * /path/to/collector/kui.sh >> ~/kui_logs/kui-run-logs-$(date +\%Y\%m).log
+```
+
+## Deployment
+
+GitHub Pages, built by `.github/workflows/deploy.yml` on every push to `main`
+that touches the site or its data. The site is served under `/kui`, so all
+internal links go through `withBase()` in `src/lib/paths.ts`.

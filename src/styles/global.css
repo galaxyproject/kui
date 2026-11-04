@@ -1,0 +1,35 @@
+@import 'tailwindcss';
+
+/* Galaxy Hub design tokens (galaxy-hub astro/DESIGN.md). */
+@theme {
+  --color-galaxy-dark: #2c3143;
+  --color-galaxy-primary: #25537b;
+  --color-galaxy-gold: #ffd700;
+  --color-galaxy-bg: #edf4fa;
+  --color-galaxy-border: #d6e3ef;
+  --color-galaxy-muted: #5b6478;
+
+  --font-sans: 'Atkinson Hyperlegible', ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', Roboto, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-galaxy-bg text-galaxy-dark font-sans antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-bold tracking-tight;
+  }
+}
+
+@utility card {
+  @apply bg-white rounded-lg shadow-sm p-6;
+}
+
+/* Section rule matching the current dashboard's heading treatment. */
+@utility section-heading {
+  @apply text-2xl font-bold border-b-2 border-galaxy-dark pb-2 mb-6;
+}

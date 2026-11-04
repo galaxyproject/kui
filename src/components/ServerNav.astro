@@ -1,0 +1,38 @@
+---
+import { servers } from '../lib/registry';
+import { withBase } from '../lib/paths';
+
+interface Props {
+  active: string;
+}
+
+const { active } = Astro.props;
+
+const links = [
+  { id: 'aggregate', label: 'All servers', href: withBase('/') },
+  ...servers.map((server) => ({
+    id: server.id,
+    label: server.shortName,
+    href: withBase(`/${server.id}/`),
+  })),
+];
+---
+
+<nav aria-label="Servers" class="flex flex-wrap gap-2">
+  {
+    links.map((link) => (
+      <a
+        href={link.href}
+        aria-current={link.id === active ? 'page' : undefined}
+        class:list={[
+          'rounded-full px-4 py-1.5 text-sm font-bold transition-colors',
+          link.id === active
+            ? 'bg-galaxy-gold text-galaxy-dark'
+            : 'bg-white/10 text-white hover:bg-white/20',
+        ]}
+      >
+        {link.label}
+      </a>
+    ))
+  }
+</nav>

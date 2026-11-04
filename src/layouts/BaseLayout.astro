@@ -1,0 +1,42 @@
+---
+import '../styles/global.css';
+import SiteFooter from '../components/SiteFooter.astro';
+import { withBase } from '../lib/paths';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Monthly usage metrics for usegalaxy.* Galaxy servers.' } = Astro.props;
+
+// Font URLs must carry the site base, which is only known at build time, so the
+// @font-face block lives here rather than in global.css.
+const fonts = [
+  { weight: 400, subset: 'latin' },
+  { weight: 400, subset: 'latin-ext' },
+  { weight: 700, subset: 'latin' },
+  { weight: 700, subset: 'latin-ext' },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="preload" as="font" type="font/woff2" crossorigin
+      href={withBase('/fonts/atkinson-hyperlegible-400-latin.woff2')} />
+    <style is:inline set:html={fonts
+      .map(
+        ({ weight, subset }) => `@font-face{font-family:'Atkinson Hyperlegible';font-style:normal;font-weight:${weight};font-display:swap;src:url('${withBase(`/fonts/atkinson-hyperlegible-${weight}-${subset}.woff2`)}') format('woff2');}`,
+      )
+      .join('')} />
+  </head>
+  <body class="min-h-screen">
+    <slot />
+    <SiteFooter />
+  </body>
+</html>

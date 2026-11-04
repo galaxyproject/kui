@@ -2,23 +2,55 @@
 
 # Query a Galaxy database to extract values for populating the Key Usage Indicators dashboard, available at gxy.io/kui.
 
-# Before running this script, update the variables at top as needed.
+# Settings live in kui.conf next to this script (override with KUI_CONFIG).
+# Copy kui.conf.sample to get started.
 # Usage: ./kui.sh [YYYY] [MM]
 
+CONFIG="${KUI_CONFIG:-$(dirname "$0")/kui.conf}"
+if [ ! -f "$CONFIG" ]; then
+    echo "ERROR: no config at $CONFIG. Copy kui.conf.sample and edit it." >&2
+    echo "Refusing to run unconfigured — that would write to the -dev tables." >&2
+    exit 1
+fi
+# shellcheck source=/dev/null
+source "$CONFIG"
 
-# Set the BigQuery project ID, dataset, and table name
-PROJECT_ID="anvil-cost-modeling"
-DATASET="kui"
-USERS_TABLE="users-dev"
-JOBS_TABLE="jobs-dev"
-USAGE_TABLE="usage-dev"
+for required in PROJECT_ID DATASET USERS_TABLE JOBS_TABLE USAGE_TABLE galaxy_server; do
+    if [ -z "${!required}" ]; then
+        echo "ERROR: $required is not set in $CONFIG" >&2
+        exit 1
+    fi
+done
 
-# Set the Galaxy server URL
-galaxy_server="https://usegalaxy.org"
 
-# Depending on your environment, you may need to set the following environment variables for gxadmin and gcloud to work.
-export PGDATABASE=galaxy_main
-export PATH=/path/to/google-cloud-sdk/bin/:$PATH
+# Re-activate the service account on every run. This is idempotent, and it is
+# what makes the collector survive a reboot: a host that loses its gcloud
+# credential cache re-establishes access from the key file on disk instead of
+# waiting for someone to notice and run `gcloud auth login` again.
+if [ -n "$SERVICE_ACCOUNT_KEY" ]; then
+    if [ ! -r "$SERVICE_ACCOUNT_KEY" ]; then
+        echo "ERROR: SERVICE_ACCOUNT_KEY is set but $SERVICE_ACCOUNT_KEY cannot be read." >&2
+        exit 1
+    fi
+    if ! gcloud auth activate-service-account --key-file="$SERVICE_ACCOUNT_KEY" --quiet; then
+        echo "ERROR: could not activate the service account in $SERVICE_ACCOUNT_KEY" >&2
+        exit 1
+    fi
+    # For anything using a Google client library rather than the gcloud CLI.
+    export GOOGLE_APPLICATION_CREDENTIALS="$SERVICE_ACCOUNT_KEY"
+fi
+
+# Check BigQuery is reachable before spending twenty minutes querying Galaxy.
+# Reads table metadata, so it verifies the credentials and the table name
+# together without running a query job.
+if ! bq show --project_id="$PROJECT_ID" "$DATASET.$USERS_TABLE" >/dev/null 2>&1; then
+    echo "ERROR: cannot reach $PROJECT_ID:$DATASET.$USERS_TABLE." >&2
+    echo "Either the credentials are not valid or the table name is wrong." >&2
+    echo "Authenticated accounts:" >&2
+    gcloud auth list --format="value(account)" 2>&1 | sed 's/^/  /' >&2
+    echo "Set SERVICE_ACCOUNT_KEY in $CONFIG to authenticate without a logged-in user." >&2
+    exit 1
+fi
 
 
 # Function to convert empty, "null", or non-numeric strings to "NULL" for SQL insertion
