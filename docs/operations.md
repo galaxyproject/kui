@@ -15,7 +15,7 @@ npm run build
 npm run preview
 ```
 
-Verify `/kui/` and a per-server path such as `/kui/usegalaxy-org/`. Check charts,
+Verify `/` and a per-server path such as `/usegalaxy-org/`. Check charts,
 date controls, responsive layout, and missing-data states in a browser. Builds
 use committed snapshots and do not require GCP credentials.
 
@@ -80,7 +80,7 @@ not part of ordinary local verification.
 
 ## GitHub Pages
 
-`astro.config.mjs` sets `site: https://galaxyproject.github.io` and `base: /kui`.
+`astro.config.mjs` sets `site: https://kui.galaxyproject.org` and `base: /`.
 The deploy workflow builds with `withastro/action@v6` and deploys using
 `actions/deploy-pages@v4`. It runs on selected site/config/data changes pushed
 to main and on manual dispatch. Deployments are serialized through the `pages`
@@ -89,6 +89,14 @@ concurrency group.
 Repository Pages settings must use GitHub Actions, and the deployment job uses
 the `github-pages` environment. Workflow files alone do not establish that the
 live repository settings, federation, or public redirect are configured.
+
+The custom domain is `kui.galaxyproject.org`. In the `galaxyproject.org` DNS
+zone, add a CNAME named `kui` pointing to `galaxyproject.github.io.`. The target
+is the organization hostname, with no repository path. Repository Pages settings
+must also name this custom domain; an Actions deployment does not require a
+CNAME file in the repository. After DNS validation and certificate issuance,
+enable HTTPS enforcement in Pages settings. See
+[GitHub's custom-domain instructions](https://docs.github.com/en/pages/configuring-a-custom-domain-for-your-github-pages-site/managing-a-custom-domain-for-your-github-pages-site).
 
 Before a release or public cutover, verify:
 

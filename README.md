@@ -25,7 +25,7 @@ supported version listed in `package.json`.
 
 ```bash
 npm ci
-npm run dev        # http://localhost:4321/kui/
+npm run dev        # http://localhost:4321/
 npm run build      # static output in dist/
 npm test           # metrics + aggregate unit tests
 npm run check      # astro/TypeScript diagnostics
@@ -101,7 +101,7 @@ result — every refresh is a reviewable diff.
 2. The admin installs the collector (below) and backfills history.
 3. Open a PR adding an entry to `servers.yml` with the exact table names.
 4. After merge, dispatch the refresh workflow; the new page appears at
-   `/kui/<server-id>/`.
+   `/<server-id>/`.
 
 ## Running the collector
 

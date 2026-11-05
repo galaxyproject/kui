@@ -45,8 +45,9 @@ schemas, fetch columns, validation, types, consumers, and fixtures.
   `h-full` to the wrapper can trigger a grow/measure autoresize loop.
 - `src/styles/global.css` defines Galaxy design tokens and shared utilities.
   Fonts are self-hosted under `public/fonts/`.
-- Internal links use `withBase()` from `src/lib/paths.ts`. The deployed base is
-  `/kui/`; domain-root links will break that deployment.
+- Internal links use `withBase()` from `src/lib/paths.ts`. The custom domain
+  `https://kui.galaxyproject.org/` uses base `/`; keep the helper so links and
+  fonts continue to respect the configured base.
 
 ## Data semantics
 
