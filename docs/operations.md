@@ -102,3 +102,10 @@ Before a release or public cutover, verify:
    is authorized. Suitable metric parity and an operational cutover are separate.
 
 Do not infer production activation from a successful local build.
+
+## gxrdb development pilot
+
+The org-only development setup and manual central workflow are described in
+[gxrdb development operations](gxrdb-operations.md). They use separate datasets
+and identities; the current monthly collection and snapshot refresh continue
+using their existing tables.

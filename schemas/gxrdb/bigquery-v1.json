@@ -1,0 +1,2197 @@
+{
+  "contractVersion": "1.0.0",
+  "tables": {
+    "intake.jobs": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "state_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "tool_id_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "tool_version",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "galaxy_version",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "destination_id",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "handler",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "runner_name",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "user_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "exit_code",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "copied_from_job_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "imported",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_jobs": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "state_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "tool_id_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "tool_version",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "galaxy_version",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "destination_id",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "handler",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "runner_name",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "user_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "exit_code",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "copied_from_job_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "imported",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.numeric_metrics": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "metric_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "plugin",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "metric_name",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "metric_value_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_numeric_metrics": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "metric_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "plugin",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "metric_name",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "metric_value_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.users": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "user_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "deleted",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "purged",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "active",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_users": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "user_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "deleted",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "purged",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "active",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.job_states": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "state_history_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "state_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_job_states": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "state_history_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "state_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.job_datasets": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "direction",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "role_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_instance_type",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_instance_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "resolution_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_job_datasets": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "direction",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "role_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_instance_type",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_instance_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "resolution_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.job_collections": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "direction",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "role_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "collection_instance_type",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "collection_instance_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "collection_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "element_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "resolution_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_job_collections": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "association_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "direction",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "role_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "collection_instance_type",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "collection_instance_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "collection_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "element_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "resolution_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.collection_elements": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "element_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "collection_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "element_index",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "child_collection_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "hda_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "ldda_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "resolution_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_collection_elements": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "element_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "collection_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "element_index",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "child_collection_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "hda_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "ldda_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "resolution_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.dataset_features": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "requested_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "observed_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "version_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "extension",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dbkey_values_json",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dbkey_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "file_size",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "total_size",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_state",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_deleted",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_purged",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "metadata_encoding",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "metadata_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_update_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "job_time_correspondence",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_dataset_features": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "requested_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "observed_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "version_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "extension",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dbkey_values_json",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dbkey_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "file_size",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "total_size",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_state",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_deleted",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "dataset_purged",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "metadata_encoding",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "metadata_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_update_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "job_time_correspondence",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.dataset_numeric_features": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "requested_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "observed_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "version_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "feature_name",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "value_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "unit",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "value_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_dataset_numeric_features": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_type",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "dataset_instance_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "requested_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "observed_version",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "version_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "feature_name",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "value_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "unit",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "value_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.failure_evidence": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "evidence_source",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "evidence_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "code_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "exit_code",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "severity_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "limit_value_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "limit_unit_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "enforcement_status",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "evidence_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_failure_evidence": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "evidence_source",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "evidence_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "code_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "exit_code",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "severity_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "limit_value_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "limit_unit_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "enforcement_status",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "evidence_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.storage": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_time",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "known_bytes",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "included_dataset_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "unknown_size_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "fallback_size_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "scope_exception_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "definition_version",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.retained_storage": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_time",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "known_bytes",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "included_dataset_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "unknown_size_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "fallback_size_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "scope_exception_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "definition_version",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "bundle_id"
+        ]
+      }
+    },
+    "intake.manifests": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "manifest_json",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "submitted_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "submitted_at"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.acceptance_records": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "manifest_sha256",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "reason_code",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "recorded_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "recorded_at"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.org_receipts": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "manifest_sha256",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "reason_code",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "recorded_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          }
+        ]
+      }
+    },
+    "central.coverage": {
+      "schema": {
+        "fields": [
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "family",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "creation_month",
+            "type": "DATE",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observed_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "details_json",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "MONTH",
+        "field": "creation_month"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "family"
+        ]
+      }
+    },
+    "central.publications": {
+      "schema": {
+        "fields": [
+          {
+            "name": "revision_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "creation_month",
+            "type": "DATE",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "family",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "recorded_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "lineage_json",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "MONTH",
+        "field": "creation_month"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "family"
+        ]
+      }
+    },
+    "central.processing_runs": {
+      "schema": {
+        "fields": [
+          {
+            "name": "run_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "started_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "finished_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "manifest_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "workflow_run_id",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "started_at"
+      }
+    }
+  }
+}

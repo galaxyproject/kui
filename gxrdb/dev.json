@@ -1,0 +1,17 @@
+{
+  "projectId": "anvil-cost-modeling",
+  "location": "US",
+  "environment": "development",
+  "serverId": "usegalaxy-org",
+  "intakeDataset": "gxrdb_dev_org_intake",
+  "centralDataset": "gxrdb_dev",
+  "maximumBytesBilled": "104857600",
+  "orgServiceAccountId": "kui-gxrdb-dev-org",
+  "centralServiceAccountId": "kui-gxrdb-dev-central",
+  "workloadPoolId": "kui-gxrdb-dev",
+  "workloadProviderId": "github-main",
+  "githubRepository": "galaxyproject/kui",
+  "githubRepositoryId": "811906330",
+  "githubOwnerId": "7937847",
+  "workflowFile": "gxrdb-process.yml"
+}

@@ -53,6 +53,7 @@ Detailed documentation:
 - [Architecture and data flow](docs/architecture.md) — manager-level overview
 - [Implementation reference](docs/implementation.md) — developer and agent details
 - [Collection, refresh, and deployment](docs/operations.md)
+- [gxrdb development operations](docs/gxrdb-operations.md) — org-only pilot
 - [Metric definitions and planned collection contracts](docs/metrics.md)
 
 ### Refreshing the data

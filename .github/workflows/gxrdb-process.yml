@@ -1,0 +1,46 @@
+name: Process gxrdb development data
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+concurrency:
+  group: gxrdb-development
+  cancel-in-progress: false
+
+jobs:
+  process:
+    if: github.repository == 'galaxyproject/kui' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GXRDB_CONFIG: gxrdb/dev.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GXRDB_WIF_PROVIDER }}
+          service_account: ${{ vars.GXRDB_SERVICE_ACCOUNT }}
+      - run: npm run gxrdb:process
+
+      - name: Report processing failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          existing=$(gh issue list --state open --search 'in:title "gxrdb development processing failed"' --json number --jq 'length')
+          if [ "$existing" -eq 0 ]; then
+            printf 'The development processing workflow failed. Inspect the status-only logs: %s\n' "$RUN_URL" > "$RUNNER_TEMP/gxrdb-failure.md"
+            gh issue create --title 'gxrdb development processing failed' --body-file "$RUNNER_TEMP/gxrdb-failure.md"
+          fi

@@ -79,9 +79,12 @@ not job or account records. Normalization runs centrally and can be replayed
 without source extraction. Collection begins before consumed-CPU normalization
 is solved; allocated core-hours does not depend on that work.
 
-This path is planned, not implemented. The current collector and fetch script
-still use monthly aggregate tables. Migrate indicators individually, retaining
-existing sources until replacement definitions, coverage, and counts are validated.
+The versioned exporter and receiver remain planned. The org-only development
+environment and manual empty-pipeline workflow are described in
+[gxrdb development operations](gxrdb-operations.md). The current collector and
+fetch script still use monthly aggregate tables. Migrate indicators individually,
+retaining existing sources until replacement definitions, coverage, and counts
+are validated.
 The planned metric contracts are described in [metrics.md](metrics.md).
 The source bundle contract for initial implementation is specified in
 [gxrdb-export-contract.md](gxrdb-export-contract.md).

@@ -5,3 +5,4 @@ dist/
 .DS_Store
 ea-no-commit/
 AGENTS.md
+gha-creds-*.json

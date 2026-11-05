@@ -14,7 +14,12 @@
     "check": "astro check",
     "fetch-data": "node scripts/fetch-data.mjs",
     "validate-snapshots": "node scripts/validate-snapshots.mjs",
-    "test": "vitest run"
+    "test": "vitest run",
+    "gxrdb:plan": "node scripts/gxrdb/provision.mjs",
+    "gxrdb:provision": "node scripts/gxrdb/provision.mjs --apply",
+    "gxrdb:process": "node scripts/gxrdb/process.mjs",
+    "gxrdb:verify-access": "node scripts/gxrdb/verify-access.mjs",
+    "test:gxrdb": "node --test scripts/gxrdb/*.test.mjs"
   },
   "dependencies": {
     "@astrojs/vue": "^7.1.2",
@@ -31,6 +36,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
     "@google-cloud/bigquery": "^9.6.0",
+    "google-auth-library": "^11.3.3",
     "jsdom": "^30.1.3",
     "typescript": "^6.0.3",
     "vitest": "^5.1.0"
