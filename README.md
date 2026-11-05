@@ -50,7 +50,8 @@ snapshots, because they depend on the date range the visitor selects.
 
 Detailed documentation:
 
-- [Architecture and data flow](docs/architecture.md)
+- [Architecture and data flow](docs/architecture.md) — manager-level overview
+- [Implementation reference](docs/implementation.md) — developer and agent details
 - [Collection, refresh, and deployment](docs/operations.md)
 - [Metric definitions and planned collection contracts](docs/metrics.md)
 

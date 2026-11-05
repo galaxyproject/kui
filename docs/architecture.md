@@ -1,84 +1,130 @@
-# Architecture
+# Architecture and data flow
 
-## Current implementation
+## Purpose
 
-KUI is a public static monthly dashboard built with Astro, Vue, Tailwind CSS,
-and ECharts. It has one network page and pages generated from `servers.yml`.
-The repository's `package.json`, lockfile, and `.nvmrc` define the toolchain.
+KUI presents monthly usage statistics for usegalaxy servers, with a page for each
+server and a combined network view. Its audience includes service managers,
+funders, and the Galaxy community.
+
+The system collects data from Galaxy, prepares public dashboard data, and
+publishes a website. BigQuery stores the collected statistics. JSON files carry
+those statistics into the website, so visitors can use the dashboard without
+access to BigQuery or a Galaxy database.
+
+## How it works today
 
 ```text
-Galaxy → gxadmin → collector/kui.sh → per-site BigQuery aggregate tables
-  → scripts/fetch-data.mjs → committed JSON → Astro build → GitHub Pages
+Galaxy database
+  → gxadmin + kui.sh: calculate monthly statistics
+  → BigQuery tables: store those statistics
+  → fetch-data.mjs: create public JSON snapshots
+  → KUI website: display charts and comparisons
 ```
 
-`servers.yml` defines server identities, display colors, and exact table names.
-Table names are never derived: org uses `users`, `jobs`, and `usage-us`.
-Other registry entries may omit unpopulated data families.
+### 1. Collect monthly statistics
 
-The fetch script explicitly selects known columns from each registered table
-and merges them into ascending monthly records. Missing months and families
-remain null. Each server has a JSON snapshot; `index.json` records first/latest
-months and row counts. Builds and frontend contributions need no GCP access.
+`collector/kui.sh` runs on each participating usegalaxy server. It uses gxadmin
+to query the Galaxy database and calculate statistics such as monthly job counts
+and engaged users. It also obtains the installed-tool count from Galaxy's API.
+It writes the results into that server's BigQuery tables.
 
-Snapshots currently use schema version 1 and contain `server`, `generatedAt`,
-and `months`. Each month contains nullable `users`, `jobs`, and `usage` groups.
-See `src/lib/types.ts` and `src/lib/schema.ts` for the authoritative fields.
-Changing the collection schema requires coordinated changes to collector table
-schemas, fetch columns, validation, types, consumers, and fixtures.
+Today, those tables already contain summarized values, grouped into users,
+jobs, and service usage. A monthly job count, for example, has already been
+calculated before it reaches BigQuery.
 
-## Frontend boundaries
+### 2. Create public JSON snapshots
 
-- `src/pages/index.astro` loads the network inputs.
-- `src/pages/[server]/index.astro` generates a page for each registered server.
-- Each page has one Vue dashboard island using `client:load`; its date range
-  drives all cards and charts. `useMonthRange.ts` reads and updates URL parameters.
-- `metrics.ts` holds pure metric calculations. `aggregate.ts` aligns server
-  series and calculates cross-server figures. These calculations depend on the
-  selected range and run in the dashboard.
-- `ClientChart.vue` imports ECharts and its Vue renderer after mount. Keep DOM
-  dependencies out of server rendering. Preserve callers' chart heights; adding
-  `h-full` to the wrapper can trigger a grow/measure autoresize loop.
-- `src/styles/global.css` defines Galaxy design tokens and shared utilities.
-  Fonts are self-hosted under `public/fonts/`.
-- Internal links use `withBase()` from `src/lib/paths.ts`. The deployed base is
-  `/kui/`; domain-root links will break that deployment.
+A scheduled GitHub Actions workflow runs `scripts/fetch-data.mjs`. This script
+reads the BigQuery tables, brings the users/jobs/usage figures together by month,
+and writes one JSON snapshot per server into the KUI repository. Missing months
+or data groups remain explicitly missing.
 
-## Data semantics
+This stage packages and aligns the statistics. The monthly counts were computed
+by the collection queries; the combined network figures are calculated by the
+dashboard.
 
-Missing values remain null. Averages skip nulls; ratios with absent inputs or
-zero denominators are unavailable. Counter deltas and moving averages use the
-full history before the displayed range is selected. Missing months must remain
-visible, and negative counter changes must not be clamped away.
+### 3. Build and display the website
 
-The one- and two-year presets select inclusive spans of 13 and 25 months.
-Year-over-year comparisons therefore include matching calendar endpoints.
-The current per-server dashboard combines registrations, engagement, service
-usage, and jobs. Service usage leads with counter changes; tool installs remain
-an absolute observation-time count.
+The website is built from the committed JSON snapshots and published on GitHub
+Pages. Its charts and cards calculate trends, year-over-year comparisons, and
+combined figures across servers as the reader changes the date range.
 
-Current aggregate headlines sum each server's latest available value inside
-the selected range. They disclose missing servers and differing contribution
-months; they are not common-cutoff totals. Metric and date definitions must
-remain explicit when changing this behavior.
+Collection and snapshot refresh normally happen monthly. The website serves
+its published snapshots between refreshes; new activity in Galaxy becomes
+visible after a later collection, snapshot refresh, and website publication.
 
-## Planned gxrdb integration
+## What gxrdb will add
 
-gxadmin remains mandatory for database extraction. Extend its queries and
-versioned exports, then extend `collector/kui.sh` to upload observations into
-per-site BigQuery intake. gxrdb will retain raw source observations, produce
-validated facts and monthly summaries, and expose reviewed public aggregates.
-KUI will continue to build from committed JSON snapshots of those aggregates.
+The next stage retains detailed observations, including individual jobs and
+their recorded resource metrics. These can support both KUI summaries and other
+consumers, such as scripts preparing a research dataset.
 
-Raw job/metric tables are private. Public snapshots contain dashboard summaries,
-not job or account records. Normalization runs centrally and can be replayed
-without source extraction. Collection begins before consumed-CPU normalization
-is solved; allocated core-hours does not depend on that work.
+**gxrdb is the private BigQuery data store and its processing rules.** It does
+not require another database server at each usegalaxy installation. The central
+processing below is planned; the current dashboard still follows the
+monthly-statistics path above.
 
-This path is planned, not implemented. The current collector and fetch script
-still use monthly aggregate tables. Migrate indicators individually, retaining
-existing sources until replacement definitions, coverage, and counts are validated.
-The planned metric contracts are described in [metrics.md](metrics.md).
-The source bundle contract for initial implementation is specified in
-[gxrdb-export-contract.md](gxrdb-export-contract.md).
+```text
+Galaxy database
+  → gxadmin + kui.sh: collect detailed observations
+  → private BigQuery tables: receive and retain observations
+  → central workflow: validate uploads and calculate monthly summaries
+  → fetch-data.mjs: write approved summaries to public JSON
+  → KUI website: display the dashboard
+```
 
-Operational setup and release checks are in [operations.md](operations.md).
+The central workflow will have two responsibilities:
+
+1. **Accept complete uploads.** Check that the expected pieces arrived and that
+   their formats, counts, and relationships are consistent. Retain valid
+   observations and record an acceptance receipt. The collector uses that
+   receipt to save its progress and safely remove its local upload files.
+   Incomplete or invalid uploads stay out of published results.
+2. **Prepare consumer data.** Apply agreed metric definitions to accepted
+   observations, maintain corrected job records, and calculate monthly summaries.
+   The JSON export selects the summaries approved for public use.
+
+For example, a job recording 3,600 runtime seconds and two allocated slots
+contributes two allocated core-hours to its month's summary, provided it meets
+the counting rules. KUI receives the monthly aggregate; the individual job
+record remains private.
+
+Keeping observations lets the project revise calculations without repeating the
+original extraction from Galaxy. It also enables future investigation of
+resource metrics whose units or measurement scope are uncertain. Raw metric
+collection starts before that normalization work is complete.
+
+## Why collection and processing have separate schedules
+
+Galaxy collection remains monthly. Central acceptance and processing work on
+data already uploaded to BigQuery; they do not query Galaxy again.
+
+A monthly collection or historical backfill can produce several upload batches.
+Each batch needs acceptance before the collector can safely release its local
+copy and advance its progress. Central processing can run after an upload, or
+more frequently during backfill and recovery, without increasing Galaxy query
+frequency. An every-few-hours schedule is an operating option, not an
+architectural requirement.
+
+## Privacy and reporting confidence
+
+Detailed job, metric, and account observations in gxrdb remain private. Public
+JSON contains approved dashboard summaries. Research-dataset preparation and
+release are separate downstream activities.
+
+Missing data stays missing rather than becoming zero. Reports must show their
+coverage and observation dates. Current combined headlines use each server's
+latest available figure within the selected range, so contributing months can
+differ; the dashboard discloses those differences.
+
+New indicators will move to gxrdb individually after validation. Existing data
+sources remain active until their replacements are ready.
+
+## Further reading
+
+- [Implementation reference](implementation.md): code locations, snapshot schemas,
+  frontend boundaries, and calculation conventions for developers and agents.
+- [Metric definitions](metrics.md): what the reported quantities mean.
+- [Operations](operations.md): collection, refresh, deployment, and verification.
+- [Export contract](gxrdb-export-contract.md): the detailed planned interface
+  between collection and central processing.
