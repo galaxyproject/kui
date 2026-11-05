@@ -17,7 +17,7 @@ export function datasetAccess(c, operator, layer) {
     { role: layer === 'intake' ? 'READER' : 'WRITER', userByEmail: central },
     ...(layer === 'intake' ? [{ role: 'WRITER', userByEmail: serviceAccount(c, c.orgServiceAccountId) }] : [])];
 }
-export async function provision(apply = false) {
+export async function provision(apply = false, grantLoadInspector = false) {
   const c = await config();
   const defs = await readJson('schemas/gxrdb/bigquery-v1.json');
   if (!apply) {
@@ -40,6 +40,14 @@ export async function provision(apply = false) {
     // Short-lived impersonation for the operator's development checks; no keys.
     await cloud(['iam', 'service-accounts', 'add-iam-policy-binding', email, `--member=user:${operator}`, '--role=roles/iam.serviceAccountTokenCreator', '--condition=None', ...projectArgs]);
   }
+  // This project-level metadata permission needs separate operator approval.
+  if (grantLoadInspector) {
+    const roleId = 'gxrdbJobMetadataReader';
+    const role = await describe(['iam', 'roles', 'describe', roleId, ...projectArgs]);
+    if (!role) await cloud(['iam', 'roles', 'create', roleId, '--title=gxrdb load job metadata reader', '--permissions=bigquery.jobs.get', '--stage=GA', ...projectArgs]);
+    else if (JSON.stringify(role.includedPermissions) !== JSON.stringify(['bigquery.jobs.get'])) throw new Error('job_metadata_role_drift');
+    await cloud(['projects', 'add-iam-policy-binding', c.projectId, `--member=serviceAccount:${serviceAccount(c, c.centralServiceAccountId)}`, `--role=projects/${c.projectId}/roles/${roleId}`, '--condition=None']);
+  }
   const { bq } = await clients(c);
   for (const [layer, id] of [['intake', c.intakeDataset], ['central', c.centralDataset]]) {
     const dataset = bq.dataset(id);
@@ -59,6 +67,15 @@ export async function provision(apply = false) {
     const ds = bq.dataset(layer === 'intake' ? c.intakeDataset : c.centralDataset);
     const [exists] = await ds.table(id).exists();
     if (!exists) await ds.createTable(id, { ...definition, labels: { application: 'gxrdb', environment: 'development' } });
+    else {
+      const [m] = await ds.table(id).getMetadata();
+      const old = m.schema.fields.map(f => ({ name: f.name, type: f.type, mode: f.mode ?? 'NULLABLE' }));
+      const wanted = definition.schema.fields;
+      if (JSON.stringify(old) !== JSON.stringify(wanted)) {
+        if (JSON.stringify(old) !== JSON.stringify(wanted.slice(0, old.length)) || wanted.slice(old.length).some(f => f.mode !== 'NULLABLE')) throw new Error('schema_mismatch');
+        await ds.table(id).setMetadata({ schema: definition.schema });
+      }
+    }
   }
   // A per-org receipt table is the only central table the collector may read.
   const receipt = bq.dataset(c.centralDataset).table('org_receipts');
@@ -88,4 +105,4 @@ export async function provision(apply = false) {
     workloadIdentityProvider: `projects/${project.projectNumber}/locations/global/workloadIdentityPools/${c.workloadPoolId}/providers/${c.workloadProviderId}`,
     centralServiceAccount: serviceAccount(c, c.centralServiceAccountId) }));
 }
-if (isMain(import.meta.url)) provision(process.argv.includes('--apply')).catch(failure);
+if (isMain(import.meta.url)) provision(process.argv.includes('--apply'), process.argv.includes('--grant-load-inspector')).catch(failure);

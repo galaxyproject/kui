@@ -17,7 +17,7 @@ export function definitions(contract) {
   out.tables['intake.manifests'] = { schema: { fields: [
     field('bundle_id', 'STRING', true), field('server_id', 'STRING', true), field('source_epoch', 'STRING', true),
     field('observation_generation', 'INTEGER', true), field('manifest_json', 'STRING', true),
-    field('submitted_at', 'TIMESTAMP', true),
+    field('submitted_at', 'TIMESTAMP', true), field('transport_json', 'STRING'),
   ] }, timePartitioning: { type: 'DAY', field: 'submitted_at' }, clustering: { fields: ['server_id', 'bundle_id'] } };
   out.tables['central.acceptance_records'] = { schema: { fields: [
     field('bundle_id', 'STRING', true), field('server_id', 'STRING', true), field('source_epoch', 'STRING', true),
@@ -40,9 +40,38 @@ export function definitions(contract) {
     field('run_id', 'STRING', true), field('started_at', 'TIMESTAMP', true), field('finished_at', 'TIMESTAMP', true),
     field('status', 'STRING', true), field('manifest_count', 'INTEGER', true), field('workflow_run_id', 'STRING'),
   ] }, timePartitioning: { type: 'DAY', field: 'started_at' } };
+  out.tables['central.retained_manifests'] = structuredClone(out.tables['intake.manifests']);
+  out.tables['central.quarantine'] = { schema: { fields: [
+    field('submission_sha256', 'STRING', true), field('bundle_id', 'STRING'), field('reason_code', 'STRING', true),
+    field('manifest_json', 'STRING', true), field('recorded_at', 'TIMESTAMP', true),
+  ] }, timePartitioning: { type: 'DAY', field: 'recorded_at' } };
+  out.tables['central.applied_bundles'] = { schema: { fields: [
+    field('bundle_id', 'STRING', true), field('server_id', 'STRING', true), field('source_epoch', 'STRING', true),
+    field('revision_id', 'STRING', true), field('applied_at', 'TIMESTAMP', true),
+  ] }, timePartitioning: { type: 'DAY', field: 'applied_at' } };
+  out.tables['central.fact_jobs'] = { schema: { fields: [
+    ...out.tables['intake.jobs'].schema.fields,
+    field('content_bundle_id', 'STRING', true), field('observed_at', 'TIMESTAMP', true),
+    field('created_month', 'DATE'), field('is_present', 'BOOLEAN', true), field('is_terminal', 'BOOLEAN', true),
+    field('compute_eligibility', 'STRING', true), field('runtime_seconds', 'BIGNUMERIC'),
+    field('slots_allocated', 'BIGNUMERIC'), field('memory_allocated_mb_raw', 'BIGNUMERIC'),
+    field('runtime_status', 'STRING', true), field('slots_status', 'STRING', true), field('memory_allocation_status', 'STRING', true),
+    field('allocation_status', 'STRING', true), field('allocated_core_hours', 'BIGNUMERIC'),
+    field('cpu_trust_status', 'STRING', true), field('memory_trust_status', 'STRING', true), field('oom_trust_status', 'STRING', true),
+    field('cgroup_version', 'STRING', true), field('revision_id', 'STRING', true),
+    field('cpu_metric_present', 'BOOLEAN'), field('memory_metric_present', 'BOOLEAN'), field('oom_metric_present', 'BOOLEAN'),
+  ] }, timePartitioning: { type: 'MONTH', field: 'created_month' }, clustering: { fields: ['server_id', 'source_epoch', 'job_id'] }, requirePartitionFilter: true };
+  out.tables['central.monthly_compute'] = { schema: { fields: [
+    field('server_id', 'STRING', true), field('source_epoch', 'STRING', true), field('created_month', 'DATE', true),
+    field('job_count', 'INTEGER', true), field('eligible_terminal_jobs', 'INTEGER', true), field('allocation_jobs', 'INTEGER', true),
+    field('pending_jobs', 'INTEGER', true), field('allocated_core_hours', 'BIGNUMERIC'), field('status', 'STRING', true),
+    field('coverage_verified', 'BOOLEAN', true), field('revision_id', 'STRING', true),
+  ] }, timePartitioning: { type: 'MONTH', field: 'created_month' }, clustering: { fields: ['server_id', 'source_epoch'] }, requirePartitionFilter: true };
   return out;
 }
 if (isMain(import.meta.url)) {
   const schema = definitions(await readJson('schemas/gxrdb/export-v1.json'));
   await writeFile(`${root}/schemas/gxrdb/bigquery-v1.json`, `${JSON.stringify(schema, null, 2)}\n`);
+  const collector = Object.fromEntries(['jobs', 'numeric_metrics', 'manifests'].map(name => [name, schema.tables[`intake.${name}`].schema.fields]));
+  await writeFile(`${root}/collector/schemas/gxrdb-v1.json`, `${JSON.stringify(collector, null, 2)}\n`);
 }

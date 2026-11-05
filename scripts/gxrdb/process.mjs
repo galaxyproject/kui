@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import { intakeBundles, acceptBundle, quarantine } from './receiver.mjs';
+import { BundleError } from './bundle.mjs';
+import { rebuildFacts } from './facts.mjs';
 import { isDeepStrictEqual } from 'node:util';
-import { config, clients, readJson, tableName, QueryBudget, integer, isMain, failure } from './lib.mjs';
+import { config, clients, readJson, tableName, QueryBudget, isMain, failure, sameSchema } from './lib.mjs';
 
-export function sameSchema(actual, expected) {
-  return isDeepStrictEqual(actual.map(f => ({ name: f.name, type: f.type, mode: f.mode ?? 'NULLABLE' })), expected);
-}
+export { sameSchema };
 export async function verifyTables(bq, c) {
   const definitions = await readJson('schemas/gxrdb/bigquery-v1.json');
   for (const [layer, datasetId] of [['intake', c.intakeDataset], ['central', c.centralDataset]]) {
@@ -20,31 +21,42 @@ export async function verifyTables(bq, c) {
       const expected = definitions.tables[`${layer}.${id}`];
       if (!sameSchema(m.schema.fields, expected.schema.fields)) throw new Error('schema_mismatch');
       if (m.timePartitioning?.type !== expected.timePartitioning?.type || m.timePartitioning?.field !== expected.timePartitioning?.field ||
-          !isDeepStrictEqual(m.clustering?.fields, expected.clustering?.fields) || m.expirationTime || m.timePartitioning?.expirationMs) throw new Error('schema_mismatch');
+          !isDeepStrictEqual(m.clustering?.fields, expected.clustering?.fields) || Boolean(m.requirePartitionFilter) !== Boolean(expected.requirePartitionFilter) || m.expirationTime || m.timePartitioning?.expirationMs) throw new Error('schema_mismatch');
     }
   }
 }
-export async function processEmpty(bq, c, { checkTables = verifyTables, runId = randomUUID() } = {}) {
-  const started = new Date().toISOString();
-  await checkTables(bq, c);
-  const budget = new QueryBudget(bq, c);
-  const rows = await budget.query(`SELECT COUNT(*) AS count FROM ${tableName(c, c.intakeDataset, 'manifests')}`);
-  const count = integer(rows[0].count);
-  const status = count === 0n ? 'empty' : 'blocked_unimplemented';
-  await budget.query(`INSERT INTO ${tableName(c, c.centralDataset, 'processing_runs')}
-    (run_id, started_at, finished_at, status, manifest_count, workflow_run_id)
-    VALUES (@run_id, TIMESTAMP(@started), CURRENT_TIMESTAMP(), @status, @count, @workflow_run_id)`,
-  { run_id: runId, started, status, count: count.toString(), workflow_run_id: process.env.GITHUB_RUN_ID ?? null },
-  { run_id: 'STRING', started: 'STRING', status: 'STRING', count: 'INT64', workflow_run_id: 'STRING' });
-  console.log(JSON.stringify({ run_id: runId, status, manifests: count.toString(), bytes_billed: budget.billed.toString() }));
-  // Slice A implements acceptance. Do not acknowledge, transform or discard a bundle here.
-  if (count !== 0n) throw new Error('pending_bundles_require_slice_a');
-  return { status, count, billed: budget.billed };
+export async function processBundles(bq,c,options={}) {
+  await (options.checkTables??verifyTables)(bq,c);
+  const budget = new QueryBudget(bq,c);
+  const submissions = await intakeBundles(c,budget);
+  const runId = randomUUID(); const started = new Date().toISOString();
+  let accepted = 0, rejected = 0;
+  for (const row of submissions) {
+    try {
+      const result = await acceptBundle(row.manifest_json,row.transport_json,c,budget,options.jobClient??bq,{envelope:row,...options});
+      if (!result.replay) accepted++;
+      if (options.crashAfterAcceptance) throw new Error('injected_after_acceptance');
+    } catch (error) {
+      if (!(error instanceof BundleError)) throw error;
+      await quarantine(row.manifest_json,row.transport_json,c,budget,error.message);
+      rejected++;
+    }
+  }
+  const publication = await rebuildFacts(c,budget,options);
+  await budget.query(`INSERT INTO ${tableName(c,c.centralDataset,'processing_runs')}
+    (run_id,started_at,finished_at,status,manifest_count,workflow_run_id)
+    VALUES(@run,TIMESTAMP(@started),CURRENT_TIMESTAMP(),@status,@count,@workflow)`,
+    {run:runId,started,status:rejected?'quarantined':'processed',count:String(submissions.length),workflow:process.env.GITHUB_RUN_ID??null},
+    {run:'STRING',started:'STRING',status:'STRING',count:'INT64',workflow:'STRING'});
+  const summary={run_id:runId,status:rejected?'quarantined':'processed',accepted,rejected,bytes_billed:budget.billed.toString(),revision:publication.revision};
+  console.log(JSON.stringify(summary));
+  if (rejected) throw new Error('bundles_quarantined');
+  return summary;
 }
 if (isMain(import.meta.url)) {
   try {
     const c = await config();
     const { bq } = await clients(c, process.env.GXRDB_IMPERSONATE);
-    await processEmpty(bq, c);
+    await processBundles(bq, c);
   } catch (error) { failure(error); }
 }

@@ -1,8 +1,8 @@
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { config, clients, serviceAccount, readJson, tableName, QueryBudget, integer, isMain, failure } from './lib.mjs';
-import { processEmpty, verifyTables } from './process.mjs';
+import { config, clients, serviceAccount, readJson, tableName, QueryBudget, isMain, failure } from './lib.mjs';
+import { verifyTables } from './process.mjs';
 
 async function permission(table, names) {
   const [response] = await table.testIamPermissions(names);
@@ -15,7 +15,7 @@ export async function verifyAccess() {
   await verifyTables(central, c);
   const own = await permission(org.dataset(c.intakeDataset).table('jobs'), ['bigquery.tables.getData', 'bigquery.tables.updateData']);
   if (!own.has('bigquery.tables.updateData')) throw new Error('org_intake_write_missing');
-  for (const id of ['retained_jobs', 'acceptance_records', 'coverage', 'publications', 'processing_runs']) {
+  for (const id of ['retained_jobs', 'acceptance_records', 'coverage', 'publications', 'processing_runs', 'fact_jobs', 'monthly_compute', 'retained_manifests', 'applied_bundles', 'quarantine']) {
     const actual = await permission(org.dataset(c.centralDataset).table(id), ['bigquery.tables.getData', 'bigquery.tables.updateData']);
     if (actual.size) throw new Error('org_central_access_leak');
   }
@@ -28,8 +28,10 @@ export async function verifyAccess() {
     const definition = (await readJson('schemas/gxrdb/bigquery-v1.json')).tables['intake.jobs'];
     const path = join(temp, 'empty-jobs.csv');
     await writeFile(path, definition.schema.fields.map(f => f.name).join(',') + '\n');
-    await org.dataset(c.intakeDataset).table('jobs').load(path, { sourceFormat: 'CSV', skipLeadingRows: 1,
+    const [ownMetadata] = await org.dataset(c.intakeDataset).table('jobs').load(path, { sourceFormat: 'CSV', skipLeadingRows: 1,
       schema: definition.schema, createDisposition: 'CREATE_NEVER', writeDisposition: 'WRITE_APPEND' });
+    const [metadata] = await central.job(ownMetadata.jobReference.jobId, { location: c.location }).getMetadata();
+    if (metadata.status?.state !== 'DONE' || metadata.status?.errorResult) throw new Error('load_inspection_failed');
   } finally { await rm(temp, { recursive: true, force: true }); }
   const budget = new QueryBudget(org, c);
   await budget.query(`SELECT COUNT(*) AS count FROM ${tableName(c, c.centralDataset, 'org_receipts')}`);
@@ -43,8 +45,6 @@ export async function verifyAccess() {
     } catch (e) { if (e.code === 403) continue; throw e; }
     throw new Error('org_central_access_leak');
   }
-  const result = await processEmpty(central, c);
-  if (integer(result.count) !== 0n) throw new Error('nonempty_pilot');
   console.log(JSON.stringify({ status: 'access_verified', org_intake_load: 'allowed', org_receipts: 'read_only', org_central_data: 'denied', central_intake: 'read_only' }));
 }
 if (isMain(import.meta.url)) verifyAccess().catch(failure);

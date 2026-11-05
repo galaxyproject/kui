@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { isDeepStrictEqual } from 'node:util';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GoogleAuth, Impersonated } from 'google-auth-library';
@@ -12,6 +13,8 @@ export async function config() {
   return validateConfig(await readJson(process.env.GXRDB_CONFIG || 'gxrdb/dev.json'));
 }
 export function validateConfig(c) {
+  if (typeof c.sourceEpoch !== 'string' || !c.sourceEpoch || c.sourceEpoch.length > 200) throw new Error('invalid_source_epoch');
+  if (!Number.isInteger(c.maximumBundlesPerRun) || c.maximumBundlesPerRun < 1 || c.maximumBundlesPerRun > 100) throw new Error('invalid_bundle_budget');
   if (c.environment !== 'development' || c.serverId !== 'usegalaxy-org') throw new Error('unsupported_pilot');
   for (const key of ['intakeDataset', 'centralDataset']) {
     if (!/^gxrdb_dev[A-Za-z0-9_]*$/.test(c[key])) throw new Error('invalid_development_dataset');
@@ -53,11 +56,19 @@ export class QueryBudget {
       useLegacySql: false, location: this.c.location, maximumBytesBilled: this.remaining.toString(),
       jobTimeoutMs: 120000, labels: { application: 'gxrdb', environment: 'development' },
     });
-    const [rows] = await job.getQueryResults({ wrapIntegers: true, timeoutMs: 120000 });
-    const [metadata] = await job.getMetadata();
+    let rows, originalError;
+    try { [rows] = await job.getQueryResults({ wrapIntegers: true, timeoutMs: 120000 }); }
+    catch (error) { originalError = error; }
+    let metadata;
+    try { [metadata] = await job.getMetadata(); }
+    catch (error) { this.remaining = 0n; throw originalError ?? error; }
     const billed = BigInt(metadata.statistics?.query?.totalBytesBilled ?? '0');
     this.remaining -= billed; this.billed += billed;
+    // Failed or timed-out work can still be billable. Unknown completion
+    // exhausts the run budget rather than allowing unaccounted follow-up work.
+    if (originalError && metadata.status?.state !== 'DONE') this.remaining = 0n;
     if (this.remaining < 0n) throw new Error('query_budget_exceeded');
+    if (originalError) throw originalError;
     return rows;
   }
 }
@@ -70,4 +81,8 @@ export function failure(error) {
   const allowed = new Set(['pending_bundles_require_slice_a', 'query_budget_exhausted', 'query_budget_exceeded', 'schema_mismatch', 'location_mismatch', 'unexpected_table', 'dataset_not_private']);
   console.error(JSON.stringify({ status: 'failed', reason: allowed.has(error.message) ? error.message : 'operation_failed' }));
   process.exitCode = 1;
+}
+
+export function sameSchema(actual, expected) {
+  return isDeepStrictEqual(actual.map(f => ({ name: f.name, type: f.type, mode: f.mode ?? 'NULLABLE' })), expected);
 }

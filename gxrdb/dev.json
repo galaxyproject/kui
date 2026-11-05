@@ -5,7 +5,7 @@
   "serverId": "usegalaxy-org",
   "intakeDataset": "gxrdb_dev_org_intake",
   "centralDataset": "gxrdb_dev",
-  "maximumBytesBilled": "104857600",
+  "maximumBytesBilled": "1073741824",
   "orgServiceAccountId": "kui-gxrdb-dev-org",
   "centralServiceAccountId": "kui-gxrdb-dev-central",
   "workloadPoolId": "kui-gxrdb-dev",
@@ -13,5 +13,7 @@
   "githubRepository": "galaxyproject/kui",
   "githubRepositoryId": "811906330",
   "githubOwnerId": "7937847",
-  "workflowFile": "gxrdb-process.yml"
+  "workflowFile": "gxrdb-process.yml",
+  "sourceEpoch": "development-1",
+  "maximumBundlesPerRun": 10
 }

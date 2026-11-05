@@ -5,6 +5,7 @@
 # Settings live in kui.conf next to this script (override with KUI_CONFIG).
 # Copy kui.conf.sample to get started.
 # Usage: ./kui.sh [YYYY] [MM]
+#        ./kui.sh --gxrdb-only [selection.json]
 
 CONFIG="${KUI_CONFIG:-$(dirname "$0")/kui.conf}"
 if [ ! -f "$CONFIG" ]; then
@@ -15,12 +16,14 @@ fi
 # shellcheck source=/dev/null
 source "$CONFIG"
 
+if [[ "${1:-}" != "--gxrdb-only" ]]; then
 for required in PROJECT_ID DATASET USERS_TABLE JOBS_TABLE USAGE_TABLE galaxy_server; do
     if [ -z "${!required}" ]; then
         echo "ERROR: $required is not set in $CONFIG" >&2
         exit 1
     fi
 done
+fi
 
 
 # Re-activate the service account on every run. This is idempotent, and it is
@@ -38,6 +41,18 @@ if [ -n "$SERVICE_ACCOUNT_KEY" ]; then
     fi
     # For anything using a Google client library rather than the gcloud CLI.
     export GOOGLE_APPLICATION_CREDENTIALS="$SERVICE_ACCOUNT_KEY"
+fi
+
+# Slice A is explicit until the monthly lifecycle is implemented. With no
+# selection argument this resumes uploads/acceptance only, without source reads.
+if [[ "${1:-}" == "--gxrdb-only" ]]; then
+    if [[ "${GXRDB_ENABLED:-false}" != "true" || -z "${GXRDB_COLLECTOR_CONFIG:-}" ]]; then
+        echo "ERROR: set GXRDB_ENABLED=true and GXRDB_COLLECTOR_CONFIG for job observations." >&2
+        exit 1
+    fi
+    args=("${GXRDB_COLLECTOR_CONFIG}")
+    if [[ -n "${2:-}" ]]; then args+=(--selection "$2"); fi
+    exec python3 "$(dirname "$0")/gxrdb.py" "${args[@]}"
 fi
 
 # Check BigQuery is reachable before spending twenty minutes querying Galaxy.

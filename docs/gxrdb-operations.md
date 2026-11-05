@@ -1,123 +1,197 @@
 # gxrdb development operations
 
-Start with the [architecture overview](architecture.md). This page covers the
-org-only development pilot. Existing KUI collection and public snapshots continue
-using their current tables.
+Start with the [architecture overview](architecture.md). The org-only development
+pipeline accepts jobs and numeric metrics, retains their raw observations, and
+builds private job facts and monthly allocated core-hours. Existing KUI collection
+and public snapshots continue using their current tables. Production onboarding,
+monthly collection queues and public indicator cutover are later steps.
 
-## Scope and configuration
+## Configuration and ownership
 
-`gxrdb/dev.json` names the project, region, datasets, identities, byte budget and
-GitHub repository. `GXRDB_CONFIG` can select another configuration file. The pilot
-requires separate development datasets and supports only `usegalaxy-org`.
+`gxrdb/dev.json` names the project, region, datasets, source epoch, identities,
+query-byte budget and maximum bundles per run. `GXRDB_CONFIG` selects another
+configuration file. This pilot supports only `usegalaxy-org` and isolated
+`gxrdb_dev*` datasets.
 
 | Resource | Purpose |
 | --- | --- |
-| `gxrdb_dev_org_intake` | Org's component uploads and completion manifests |
-| `gxrdb_dev` | Retained observations, acceptance records, org receipts, coverage, publications and processing runs |
+| `gxrdb_dev_org_intake` | Component uploads and completion submissions |
+| `gxrdb_dev` | Retained observations, receipts, quarantine, facts and publication bookkeeping |
 | Org development service account | Load/read its intake; read its receipts |
-| Central development service account | Read intake; write central tables |
+| Central development service account | Read intake; write central tables; inspect load-job metadata |
 
-These are private development resources. No other usegalaxy server is provisioned.
-There is no automatic table or partition expiry: development cleanup is explicit,
-so an old source observation cannot silently expire. Source capture and production
-onboarding follow in later steps.
+Both datasets are private, with explicit cleanup and no automatic table/partition
+expiry. Source IDs and generations are exact INT64s; raw numeric measurements
+remain STRINGs. Component observations use ingestion-time partitions. Facts and
+monthly summaries use creation-month partitions and require partition filters.
+Schemas are generated with `node scripts/gxrdb/schema.mjs` from the shared
+[export contract](gxrdb-export-contract.md).
 
-The versioned BigQuery schemas are in `schemas/gxrdb/bigquery-v1.json`, generated
-from the export contract by `node scripts/gxrdb/schema.mjs`. Source INT64 values
-remain BigQuery INTEGERs. Raw decimal metrics and JSON-array text remain STRINGs,
-preserving their exact source representation. Component observations use
-ingestion-time partitions; bookkeeping uses its recorded dates. Detailed
-acceptance and canonical fact definitions are implemented in Slice A.
+## Provisioning and access checks
 
-## Provisioning
-
-Use the normal maintainer Google Cloud credentials; never put credentials in
-configuration or source control. The provisioning command needs `gcloud`, Node,
-and Google Application Default Credentials for the same human operator:
+Use the maintainer's normal Google Cloud credentials, `gcloud`, Node and Google
+Application Default Credentials. Never put credentials in configuration or Git.
 
 ```sh
 npm ci
-npm run gxrdb:plan       # prints a plan; no cloud writes
-npm run gxrdb:provision  # creates/reconciles the isolated development resources
-```
-
-Provisioning creates the two development service accounts, gives them query-job
-permission in the configured project, and assigns dataset access explicitly.
-It also allows the operator to impersonate these two accounts for validation.
-It creates no service-account keys. Existing KUI datasets, collector accounts,
-and snapshot-refresh authentication are not changed.
-
-Org cannot read retained observations or modify central data. Its one central
-read permission is the dedicated `org_receipts` table, which will contain only
-org acceptance statuses. Central processing cannot modify the source intake.
-Cross-server isolation testing is deferred until another server is onboarded.
-
-The dedicated workload-identity provider checks immutable GitHub owner/repository
-IDs, `refs/heads/main`, and the exact `gxrdb-process.yml` workflow path. The
-service-account binding grants access through that provider's repository
-attribute. This is separate from the existing snapshot-refresh identity. See
-[Google's federation guidance](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines)
-and [GitHub's OIDC claims](https://docs.github.com/en/actions/reference/security/oidc).
-
-## Validate the development environment
-
-```sh
-npm run test:gxrdb
+npm run gxrdb:plan
+npm run gxrdb:provision
 npm run gxrdb:verify-access
 ```
 
-The access check uses short-lived impersonation of the actual development
-accounts. It appends a header-only, zero-row load to org's jobs intake, checks
-receipt access, and verifies that central reads/writes are denied to org.
-Negative query checks use dry runs. It also executes the empty pipeline as the
-central identity. No Galaxy server connection or source query is involved.
+Provisioning reconciles the development accounts, schemas and explicit dataset
+permissions, and allows the operator to impersonate the two accounts. It creates
+no service-account keys and leaves legacy KUI resources alone. Additive schema
+updates permit nullable suffix columns; incompatible existing schemas fail.
 
-These checks make real Google Cloud requests. They are separate from routine
-CI and frontend tests. The development manifests table must be empty.
+Independent verification of org's load jobs also requires a custom project role
+containing only `bigquery.jobs.get`. Granting it is a separate explicit action:
+
+```sh
+node scripts/gxrdb/provision.mjs --apply --grant-load-inspector
+```
+
+This was approved for the central development account. It permits reading other
+accounts' job metadata across the project, including query text; it provides no
+table-read or IAM-management permission. The normal provisioning command does
+not introduce this grant implicitly.
+
+The access check uses short-lived impersonation of both development accounts.
+It submits a header-only zero-row load, verifies central inspection of its
+metadata, checks receipt access, and verifies denial of org reads/writes to
+retained data and facts. Negative query checks are dry runs. It works with a
+populated intake and does not accept bundles or run Galaxy queries. These are
+live cloud checks, separate from routine CI.
+
+The workload-identity provider restricts authentication to immutable GitHub
+owner/repository IDs, `main`, and this repository's `gxrdb-process.yml` workflow.
+The repository variables `GXRDB_WIF_PROVIDER` and `GXRDB_SERVICE_ACCOUNT` select
+that provider and the central account. No other server identity is provisioned.
+
+## Collector runtime and a bounded manual capture
+
+The site needs a gxadmin build containing `galaxy export-job-observations`, psql,
+Python 3, gcloud/bq and jq, Galaxy connection configuration, and a private writable
+state directory. The exporter is developed in gxadmin; KUI contains no Galaxy SQL.
+Check the running Galaxy application release (26.1 minimum) and the site's UTC
+interpretation; recorded job versions do not establish the running release.
+
+1. Copy `collector/gxrdb.conf.sample.json` to a private configuration file and
+   set source identity, verified release, destination and absolute state path.
+2. In `kui.conf`, set `GXRDB_ENABLED=true` and `GXRDB_COLLECTOR_CONFIG` to that
+   file. Use the site's own intake identity through the normal gcloud setup.
+3. Provide a bounded selection JSON, with IDs encoded as decimal strings:
+
+```json
+{"entity":"jobs","mode":"id_range","lowExclusive":"100","highInclusive":"200"}
+```
+
+```sh
+KUI_CONFIG=/private/path/kui.conf ./collector/kui.sh --gxrdb-only selection.json
+# Resume uploads and consume receipts without selecting new source data:
+KUI_CONFIG=/private/path/kui.conf ./collector/kui.sh --gxrdb-only
+```
+
+The explicit mode does not require legacy monthly collector variables. Normal
+monthly collection continues on its existing path; automatic discovery, pending
+refresh and reconciliation queues follow in the monthly lifecycle step.
+
+Defaults bound a run to 500 selected IDs, 16 MiB of source output, 256 MiB of local
+spool, four unaccepted bundles, 50,000 pending jobs and ten minutes. gxadmin uses
+one read-only repeatable-read transaction, finite query/lock timeouts, an output
+budget and a shared advisory lock against concurrent exports. The collector
+also holds a local exclusive lock. State/spool directories must be private.
+
+## Upload, acceptance and recovery
+
+The collector saves a generation and UUID before extraction. Completed files are
+immutable, with deterministic gzip, checksums and explicit CSV schemas/null
+markers. Repeated upload attempts inspect the original deterministic load-job ID;
+a new attempt ID is allowed only after a confirmed atomic load failure.
+
+Component uploads are followed by a completion submission containing the source
+manifest, capability record and load-job references. Central processing checks
+manifest and capability compatibility, actual load owner/destination/options,
+checksums in job labels, parsed counts, source keys, selection membership and
+metric allow-lists. The checksum identifies the collector's immutable upload;
+BigQuery metadata does not provide an independent digest of uploaded file bytes.
+Partial uploads have no completion submission and cannot be accepted.
+
+Acceptance copies all validated observations and provenance into central tables
+and commits an acceptance record plus a read-only site receipt in one transaction.
+Invalid submissions enter private quarantine. Transient API/infrastructure errors
+remain retriable. Acceptance is separate from fact publication: accepted raw data
+can be replayed if a later transformation fails.
+
+Only an accepted receipt matching both UUID and manifest hash advances the local
+checkpoint and pending-job list. Receipt application follows generation order.
+Accepted files are removed after the configured grace period; unaccepted and
+rejected files are preserved. Disk exhaustion stops collection instead of dropping
+unacknowledged data. A checkpoint records its accepted selection, not proof of
+complete discovery or date coverage.
+
+A rejected bundle stops automatic processing. After diagnosing and correcting the
+cause, explicitly re-extract its selection with a fresh identity/generation:
+
+```sh
+python3 collector/gxrdb.py /private/path/gxrdb.json --retry-rejected BUNDLE_UUID
+```
+
+The old spool remains in `rejected/`. An interrupted rejection transition can be
+resumed with the same command. Do not edit a completed bundle or delete state to
+force a retry. A source-epoch change requires deliberate onboarding; it must not
+be used to hide generation conflicts. Lost-state generation recovery consults
+intake and receipts, but full discovery/pending reconstruction is later lifecycle
+work. Retain the private state directory across routine deployments.
 
 ## Run central processing
 
-The workflow is manual: **Process gxrdb development data** in GitHub Actions.
-There is no scheduled trigger in the pilot. Configure these repository variables
-from the provisioning command's output:
-
-- `GXRDB_WIF_PROVIDER`: full workload-identity provider resource name.
-- `GXRDB_SERVICE_ACCOUNT`: central development service-account email.
-
-The workflow file must first be published on `main`; obtain push approval before
-publishing. Its job checks the repository and branch before authentication, and
-Google independently enforces the identity-provider conditions.
-
-For local validation as the central identity:
+The **Process gxrdb development data** workflow is manually dispatched after an
+upload batch. There is no recurring trigger. For local validation using the
+configured central account:
 
 ```sh
 GXRDB_IMPERSONATE=kui-gxrdb-dev-central@anvil-cost-modeling.iam.gserviceaccount.com npm run gxrdb:process
 ```
 
-Substitute the configured central email if using another project. Local
-impersonation validates the central account's BigQuery permissions; the first
-published Actions run separately validates GitHub-to-Google authentication.
+Publishing workflow/code changes requires push approval. A local impersonated run
+checks actual central permissions; a published Actions run also checks federation.
 
-At this stage processing checks table schemas, region and partitioning, counts
-completion manifests, and writes a processing-run record. An empty intake
-succeeds. If manifests exist, it records `blocked_unimplemented` and fails:
-**it does not accept, acknowledge, transform or delete any bundle.** Slice A
-will implement that behavior. Do not start source uploads expecting acceptance
-until that implementation is ready.
+Facts choose the newest accepted generation covering each job. A newer empty
+metric set replaces older children; an omitted job in an authoritative selection
+becomes a tombstone. Corrections rebuild old and new creation-month slices.
+Facts, summaries, revision records and the applied-bundle ledger commit together.
+Replays and older delayed uploads cannot inflate totals or reverse newer data.
 
-## Budgets and failures
+Allocated core-hours are runtime seconds times declared slots divided by 3,600.
+Only present, non-copied, explicitly non-imported, execution-finished jobs
+(`ok`, `error`, `deleted`) with usable core metrics contribute. Identical duplicate
+values collapse; conflicting, null, invalid or missing values remain unknown.
+Runtime zero is valid; slots must be a positive integer. Reopened jobs remain
+pending even if old metrics persist. Declared slots do not establish an enforced
+CPU limit. Memory allocation status is independent of allocated core-hours.
 
-Every query has `maximumBytesBilled` set from the remaining per-run budget
-(default 100 MiB). Billed bytes are deducted before the next query. Queries have
-finite timeouts and workflow runs have a ten-minute limit; GitHub concurrency
-allows one processing run at a time. See
-[BigQuery query limits](https://docs.cloud.google.com/bigquery/docs/troubleshoot-queries).
+Raw cgroup counters remain exact and unresolved. CPU, memory and OOM presence
+and trust are separate fields; no consumed-resource normalization is claimed.
+All summaries remain `provisional` with `coverage_verified=false`. Bounded fixture
+capture does not establish coverage from the proposed 2026 job floor. There is no
+public snapshot export from these facts yet.
 
-Public workflow logs contain only run IDs, statuses, counts and billed bytes.
-Raw rows and query-error payloads are never printed. On failure, the workflow
-opens one issue per unresolved failure streak with a link to the run. Investigate
-permission/schema failures before retrying; a pending-manifest failure requires
-the Slice A receiver, not a larger query budget.
+## Budgets, logs and tests
 
-The empty workflow writes only `processing_runs`. It leaves receipts,
-acceptance records, retained observations, coverage and publications untouched.
+Every query is capped by the remaining per-run
+[`maximumBytesBilled`](https://docs.cloud.google.com/bigquery/docs/reference/rest/v2/Job#jobconfigurationquery); billed bytes
+are deducted even after failed queries. Unknown completion exhausts the remaining
+budget. Central defaults to 1 GiB per run (small development transactions used
+roughly 250–420 MiB), 120-second query timeouts and ten bundles. GitHub has a
+ten-minute timeout and one processing run at a time. These are query-byte limits,
+not a reservation or source-coverage guarantee.
+
+Public logs contain statuses, run/bundle IDs, counts and billed bytes. Raw rows,
+SQL-error bodies and credentials stay private. The workflow opens one issue per
+unresolved failure streak with a link to the run. Check private quarantine and
+receipts when diagnosing rejected data.
+
+`npm run test:gxrdb` runs offline Node protocol/budget tests and Python collector
+recovery tests. ea-dev fixtures and live failure-injection scripts are temporary
+local development artifacts, outside this repository; they are not CI commands.

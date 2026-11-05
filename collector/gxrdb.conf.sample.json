@@ -1,0 +1,20 @@
+{
+  "environment": "development",
+  "projectId": "anvil-cost-modeling",
+  "location": "US",
+  "serverId": "usegalaxy-org",
+  "sourceEpoch": "development-1",
+  "intakeDataset": "gxrdb_dev_org_intake",
+  "centralDataset": "gxrdb_dev",
+  "stateDirectory": "/var/lib/kui/gxrdb",
+  "galaxyRelease": "26.2",
+  "timestampInterpretation": "UTC",
+  "maxRows": 500,
+  "maxOutputBytes": 16777216,
+  "maxSpoolBytes": 268435456,
+  "maxPendingBundles": 4,
+  "maxPendingJobs": 50000,
+  "maxRuntimeSeconds": 600,
+  "acceptedGraceSeconds": 3600,
+  "maximumBytesBilled": "104857600"
+}

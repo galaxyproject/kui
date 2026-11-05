@@ -29,10 +29,11 @@ The gxadmin interface has three responsibilities:
    observation-time storage aggregate. The collector supplies source identity,
    persisted generation, and bundle identity; gxadmin owns the source queries.
 
-Exact public command names are settled when integrating the interface upstream.
-Do not couple the receiver to the temporary development spike's command names.
-The development spike uses gxadmin's existing `local` extension mechanism to
-prove execution behavior; it is not the production export implementation.
+Slice A implements `galaxy job-observation-capabilities`,
+`galaxy job-observation-bounds` and `galaxy export-job-observations` in gxadmin.
+They currently support the jobs/numeric-metrics scope. Remaining component
+exports follow in later slices. Runner backend is read from
+`job.job_runner_name`; `job.runner_name` is a different legacy field.
 
 ## Snapshot and selection
 
@@ -83,7 +84,7 @@ central rules; a maximum ID alone does not establish complete date coverage.
 - `utc_timestamp` means ISO 8601 UTC with `Z` and source precision. Galaxy's
   timestamp-without-time-zone fields require a verified UTC interpretation;
   changing a session timezone alone does not establish that interpretation.
-- Booleans use PostgreSQL CSV `t`/`f`, with unquoted empty for null. JSON-array
+- Booleans use PostgreSQL CSV `t`/`f`, with the declared marker for null. JSON-array
   text fields use valid JSON inside ordinary CSV quoting. Preserve a list-valued
   `dbkey` without reducing it arbitrarily to one value.
 
@@ -146,6 +147,16 @@ compressed bytes. Part names are safe basenames and indexes are unique and
 contiguous within the component. Checksums identify retry files; the receiver
 also validates load metadata, schemas, membership, and parsed record counts.
 
+The intake completion row adds nullable `transport_json` alongside the unchanged
+source `manifest_json`. It carries the exact capability JSON and deterministic
+load-job references/attempts for each part. This is transport provenance, not a
+change to source CSV fields or the frozen source manifest. Central processing
+independently reads completed load-job metadata and validates destination,
+account, options, declared checksum labels and output row counts. These labels
+bind the collector's retry identity; BigQuery does not expose an independent
+SHA-256 of uploaded bytes. Its `inputFileBytes` is not the compressed gzip size
+and must not be compared to the manifest's `compressedBytes`.
+
 `requestedComponents` identifies this bundle's scope. Every requested component
 appears exactly once in the manifest. A complete empty component has one
 header-only compressed part and zero records. An unsupported component has no
@@ -206,7 +217,8 @@ application is 26.2; this is not a test of a running 26.1 application. Core
 resubmission metrics were absent from that sample and must not default to zero;
 recorded state history is another source where available and complete.
 
-BigQuery load/acceptance and null-marker round trips follow in Slice A. Full
+Slice A validates BigQuery loading, acceptance and null/empty/quoted-value
+round trips on ea-dev. Full
 library/output-collection semantics and metadata decoding are implemented and
 tested in Slice B. The global storage query received EXPLAIN only; full-query
 timing remains part of the storage addition. None of these later gates is claimed

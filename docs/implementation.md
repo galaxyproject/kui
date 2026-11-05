@@ -67,7 +67,7 @@ the selected range. They disclose missing servers and differing contribution
 months; they are not common-cutoff totals. Metric and date definitions must
 remain explicit when changing this behavior.
 
-## Planned gxrdb integration
+## gxrdb integration
 
 gxadmin remains mandatory for database extraction. Extend its queries and
 versioned exports, then extend `collector/kui.sh` to upload observations into
@@ -80,10 +80,11 @@ not job or account records. Normalization runs centrally and can be replayed
 without source extraction. Collection begins before consumed-CPU normalization
 is solved; allocated core-hours does not depend on that work.
 
-The versioned exporter and receiver remain planned. The org-only development
-environment and manual empty-pipeline workflow are described in
-[gxrdb development operations](gxrdb-operations.md). The current collector and
-fetch script still use monthly aggregate tables. Migrate indicators individually,
+The first job/metric slice has a gxadmin exporter, an opt-in durable collector,
+central acceptance and private allocated-core-hour facts. The org-only development
+environment and manual processing workflow are described in
+[gxrdb development operations](gxrdb-operations.md). Normal monthly collection and
+the public fetch script still use legacy monthly aggregate tables. Migrate indicators individually,
 retaining existing sources until replacement definitions, coverage, and counts
 are validated.
 The planned metric contracts are described in [metrics.md](metrics.md).

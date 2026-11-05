@@ -1935,6 +1935,11 @@
             "name": "submitted_at",
             "type": "TIMESTAMP",
             "mode": "REQUIRED"
+          },
+          {
+            "name": "transport_json",
+            "type": "STRING",
+            "mode": "NULLABLE"
           }
         ]
       },
@@ -2192,6 +2197,422 @@
         "type": "DAY",
         "field": "started_at"
       }
+    },
+    "central.retained_manifests": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "manifest_json",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "submitted_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "transport_json",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "submitted_at"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "bundle_id"
+        ]
+      }
+    },
+    "central.quarantine": {
+      "schema": {
+        "fields": [
+          {
+            "name": "submission_sha256",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "reason_code",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "manifest_json",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "recorded_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "recorded_at"
+      }
+    },
+    "central.applied_bundles": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "revision_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "applied_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "DAY",
+        "field": "applied_at"
+      }
+    },
+    "central.fact_jobs": {
+      "schema": {
+        "fields": [
+          {
+            "name": "bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observation_generation",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "part_index",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_id",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "create_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "update_time",
+            "type": "TIMESTAMP",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "state_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "tool_id_raw",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "tool_version",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "galaxy_version",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "destination_id",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "handler",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "runner_name",
+            "type": "STRING",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "user_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "exit_code",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "copied_from_job_id",
+            "type": "INTEGER",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "imported",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "content_bundle_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "observed_at",
+            "type": "TIMESTAMP",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "created_month",
+            "type": "DATE",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "is_present",
+            "type": "BOOLEAN",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "is_terminal",
+            "type": "BOOLEAN",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "compute_eligibility",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "runtime_seconds",
+            "type": "BIGNUMERIC",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "slots_allocated",
+            "type": "BIGNUMERIC",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "memory_allocated_mb_raw",
+            "type": "BIGNUMERIC",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "runtime_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "slots_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "memory_allocation_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "allocation_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "allocated_core_hours",
+            "type": "BIGNUMERIC",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "cpu_trust_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "memory_trust_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "oom_trust_status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "cgroup_version",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "revision_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "cpu_metric_present",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "memory_metric_present",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "oom_metric_present",
+            "type": "BOOLEAN",
+            "mode": "NULLABLE"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "MONTH",
+        "field": "created_month"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch",
+          "job_id"
+        ]
+      },
+      "requirePartitionFilter": true
+    },
+    "central.monthly_compute": {
+      "schema": {
+        "fields": [
+          {
+            "name": "server_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "source_epoch",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "created_month",
+            "type": "DATE",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "job_count",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "eligible_terminal_jobs",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "allocation_jobs",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "pending_jobs",
+            "type": "INTEGER",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "allocated_core_hours",
+            "type": "BIGNUMERIC",
+            "mode": "NULLABLE"
+          },
+          {
+            "name": "status",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "coverage_verified",
+            "type": "BOOLEAN",
+            "mode": "REQUIRED"
+          },
+          {
+            "name": "revision_id",
+            "type": "STRING",
+            "mode": "REQUIRED"
+          }
+        ]
+      },
+      "timePartitioning": {
+        "type": "MONTH",
+        "field": "created_month"
+      },
+      "clustering": {
+        "fields": [
+          "server_id",
+          "source_epoch"
+        ]
+      },
+      "requirePartitionFilter": true
     }
   }
 }

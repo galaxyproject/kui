@@ -6,3 +6,4 @@ dist/
 ea-no-commit/
 AGENTS.md
 gha-creds-*.json
+__pycache__/

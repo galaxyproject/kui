@@ -34,3 +34,10 @@ export CLOUDSDK_CONFIG=/etc/kui/gcloud
 # Environment gxadmin and gcloud need. Adjust to your host.
 export PGDATABASE=galaxy_main
 export PATH=/path/to/google-cloud-sdk/bin/:$PATH
+
+# Opt-in jobs/metrics collection. Slice A is run explicitly with:
+#   ./kui.sh --gxrdb-only /path/to/selection.json
+# Omit the selection argument to resume uploads and check acceptance receipts.
+# The normal monthly aggregate path remains unchanged until lifecycle rollout.
+GXRDB_ENABLED=false
+GXRDB_COLLECTOR_CONFIG="/etc/kui/gxrdb.json"
