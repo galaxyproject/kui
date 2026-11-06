@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   refresh:
-    runs-on: ubuntu-latest
+    runs-on: gcp-runner
     steps:
       - uses: actions/checkout@v4
 

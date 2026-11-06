@@ -23,6 +23,11 @@ The CI workflow runs snapshot validation, tests, Astro checks, and the build
 on pull requests or manual dispatch. There is no requirement to contact a live
 Galaxy database for frontend checks.
 
+All workflows select the organization's `gcp-runner` label, matching
+`galaxy-k8s-boot`. CI explicitly installs Node from `.nvmrc` and Python 3.12 for
+the collector tests. Runner access is managed by the organization; selecting the
+label does not register a new runner.
+
 ## Site collector
 
 Installation and per-site onboarding are described in the [README](../README.md).

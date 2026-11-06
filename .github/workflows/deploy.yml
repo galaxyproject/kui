@@ -26,14 +26,14 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: gcp-runner
     steps:
       - uses: actions/checkout@v4
       - uses: withastro/action@v6
 
   deploy:
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: gcp-runner
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
