@@ -34,7 +34,7 @@ def fixture(source, empty=False):
         columns = [f['name'] for f in SCHEMAS[name]][5:]
         cap['components'][name] = {'schemaVersion': 1, 'status': 'supported', 'columns': columns}
         with (source/(name+'.csv')).open('w', newline='') as out:
-            writer = csv.writer(out, lineterminator='\n', quoting=csv.QUOTE_NOTNULL)
+            writer = csv.writer(out, lineterminator='\n')
             writer.writerow(columns)
             if not empty:
                 writer.writerow(payload)
@@ -66,7 +66,7 @@ class Packaging(unittest.TestCase):
                     rows = [json.loads(line) for line in inp]
                 self.assertEqual(rows[0]['observation_generation'], '9007199254740993')
                 fields = [f['name'] for f in SCHEMAS[component['name']]][5:]
-                expected = dict(zip(fields, payloads[component['name']]))
+                expected = {k: v if v != '' else None for k, v in zip(fields, payloads[component['name']])}
                 if component['name'] == 'jobs':
                     expected['imported'] = False
                 self.assertEqual({k:rows[0][k] for k in fields}, expected)

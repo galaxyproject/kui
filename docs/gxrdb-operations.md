@@ -71,9 +71,8 @@ that provider and the central account. No other server identity is provisioned.
 ## Collector runtime and a bounded manual capture
 
 The site needs a gxadmin build containing `galaxy export-job-observations`, psql,
-Python 3.13 or later, gcloud/bq and jq, Galaxy connection configuration, and a
-private writable state directory. Python 3.13 includes the required
-[CSV reader null-handling fix](https://docs.python.org/3.12/library/csv.html#csv.QUOTE_NOTNULL).
+Python 3.11 or later, gcloud/bq and jq, Galaxy connection configuration, and a
+private writable state directory. Empty exported fields are loaded as null.
 Keep `collector/` and `schemas/gxrdb/export-v1.json` in their repository layout;
 the collector derives its schemas from that contract. The exporter is developed in gxadmin; KUI contains no Galaxy SQL.
 gxadmin derives the recorded Galaxy release from the latest version-bearing

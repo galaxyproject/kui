@@ -71,8 +71,8 @@ def configuration(path):
     c.setdefault('maximumBytesBilled', '4294967296')
     number(c['maximumBytesBilled'])
     c.setdefault('gxadmin', 'gxadmin')
-    if sys.version_info < (3, 13):
-        raise ValueError('Python 3.13 or later is required')
+    if sys.version_info < (3, 11):
+        raise ValueError('Python 3.11 or later is required')
     c.setdefault('bqCommand', ['bq'])
     return c
 
@@ -184,7 +184,9 @@ def package_source(source, output, request, schemas):
             path = work/(name+'-00000.jsonl.gz')
             count = 0
             with (source/(name+'.csv')).open(encoding='utf-8', newline='') as inp, path.open('wb') as raw:
-                rows = csv.reader(inp, strict=True, quoting=csv.QUOTE_NOTNULL)
+                # PostgreSQL CSV writes NULL and '' differently, but the csv module
+                # reads both as ''. The distinction is not needed for these fields.
+                rows = csv.reader(inp, strict=True)
                 if next(rows) != fields:
                     raise ValueError('source_header_mismatch')
                 with gzip.GzipFile(filename='', fileobj=raw, mode='wb', mtime=0) as compressed:
@@ -192,7 +194,7 @@ def package_source(source, output, request, schemas):
                         for row in rows:
                             if len(row) != len(fields):
                                 raise ValueError('source_row_width_mismatch')
-                            values = dict(zip(columns, envelope+row))
+                            values = dict(zip(columns, envelope+[value if value != '' else None for value in row]))
                             for field in schemas[name]:
                                 if field['type'] == 'BOOLEAN' and values[field['name']] is not None:
                                     values[field['name']] = values[field['name']] == 't'

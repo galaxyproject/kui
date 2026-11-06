@@ -33,9 +33,10 @@ For an explicit list or customized budgets, supply a request JSON and output
 directory. Requests contain `selection`, optional `timestampInterpretation=UTC`,
 and optional row/range/output/time limits. No declared Galaxy release is needed.
 
-The collector reserves identity/generation, reads CSV with Python 3.13's
-`QUOTE_NOTNULL`, adds the envelope and writes gzipped JSON Lines. JSON null,
-empty strings and literal backslash-N remain distinct without collision markers.
+The collector reserves identity/generation, reads the CSV, adds the envelope
+and writes gzipped JSON Lines. Empty fields become JSON null; the source's
+NULL/empty-string distinction is not preserved, as no exported field needs it.
+Literal backslash-N and other text pass through unchanged.
 IDs, generations and raw numeric values stay strings; booleans become JSON
 booleans. A persisted source snapshot and request produce deterministic bytes.
 
