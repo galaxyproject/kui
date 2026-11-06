@@ -1,25 +1,9 @@
 # gxrdb export contract v1
 
-Status: **frozen v1 transport bundle contract**. The shared-snapshot
-mechanism passed development tests on Galaxy 26.2/PostgreSQL 17.2 and
-maintainer-run org validation on Galaxy 26.2/PostgreSQL 16.15, including 500 jobs
-and 1,335 populated metric rows. Org retains database records; no cleanup-script
-inspection is required. Wire changes discovered during implementation require
-an explicit contract revision and compatible receiver/exporter changes.
-
-The machine-readable definitions are
-[`export-v1.json`](../schemas/gxrdb/export-v1.json) and
-[`manifest-v1.schema.json`](../schemas/gxrdb/manifest-v1.schema.json).
-They define the implementation interface, not commands or ingestion already available
-in a released gxadmin/KUI deployment.
-
-## Source compatibility and command boundaries
-
-Galaxy 26.1 is the minimum supported release. Check the actual application
-release and source schema before extracting; an old recorded job's
-`galaxy_version` is not the running application's version. Older application
-releases fail preflight. A missing optional observation on a supported release
-is reported as unavailable rather than invented or silently dropped.
+The current development contract is defined in `schemas/gxrdb/export-v1.json`
+and `manifest-v1.schema.json`. Galaxy 26.1 is the minimum recorded release;
+gxadmin derives it from the latest version-bearing source job. Missing version
+information or unsupported schemas fail extraction.
 
 The gxadmin interface has three responsibilities:
 
@@ -38,24 +22,22 @@ exports follow in later slices. Runner backend is read from
 
 ## Native gxadmin export and collector packaging
 
-The native format-version-1 output is `jobs.csv`, `numeric_metrics.csv` and
-`metadata.json`. CSV headers contain only the component fields from
-`export-v1.json`, without the common envelope. Metadata records the selection,
-CSV null marker, row counts, observation time, PostgreSQL snapshot ID and source
-capabilities/build. Source numeric metrics remain unmodified decimal text.
+The native output is `jobs.csv`, `numeric_metrics.csv` and `metadata.json`.
+Headers contain only component fields from `export-v1.json`. PostgreSQL's standard
+CSV encoding represents null as an unquoted empty field and an empty string as
+`""`. Metadata records selection, counts, observation time, PostgreSQL snapshot
+and source capabilities. Raw metrics remain exact decimal text.
 
-The request contains `galaxyRelease`, verified `timestampInterpretation=UTC`,
-`selection`, optional `csvNullMarker`, and row/output/time budgets. Capabilities
-and bounds use `GXADMIN_GALAXY_RELEASE` and `GXADMIN_SOURCE_TIMEZONE`. A native
-export does not use gxrdb identities or generate a transport manifest.
+For a range, use `gxadmin galaxy export-job-observations LOW HIGH OUTPUT`.
+For an explicit list or customized budgets, supply a request JSON and output
+directory. Requests contain `selection`, optional `timestampInterpretation=UTC`,
+and optional row/range/output/time limits. No declared Galaxy release is needed.
 
-The collector reserves its identity/generation before extraction, passes its
-per-bundle marker to gxadmin, then attaches the common envelope to every CSV
-row. It derives the wire capability record (including `sourceFormatVersion`),
-compresses the files, counts/checksums them and writes the frozen v1 manifest.
-Repackaging the same native snapshot and persisted request yields the same wire
-bytes. Native schema compatibility is checked before upload; receiver validation
-of the transport bundle remains independent.
+The collector reserves identity/generation, reads CSV with Python 3.13's
+`QUOTE_NOTNULL`, adds the envelope and writes gzipped JSON Lines. JSON null,
+empty strings and literal backslash-N remain distinct without collision markers.
+IDs, generations and raw numeric values stay strings; booleans become JSON
+booleans. A persisted source snapshot and request produce deterministic bytes.
 
 ## Snapshot and selection
 
@@ -77,48 +59,24 @@ ordering keys. The collector's persisted generation orders re-observations.
 Job-time eligibility, floor verification, and period coverage remain explicit
 central rules; a maximum ID alone does not establish complete date coverage.
 
-## CSV and exact values
+## Serialization and exact values
 
-- Each component has the exact ordered header: common envelope columns, then
-  its fields from `export-v1.json`. Unknown/missing/reordered columns fail
-  validation; never use schema autodetection or tolerate bad rows.
-- Use UTF-8 PostgreSQL CSV: comma delimiter, double-quote quoting/escaping,
-  LF record terminators, and a header in every part. Quoted embedded newlines
-  are valid; count records with a CSV parser rather than counting text lines.
-- Use an explicit CSV null marker `__gxrdb_null_<bundle UUID>__`, recorded as
-  `csvNullMarker` in the manifest and supplied to PostgreSQL COPY and BigQuery's
-  `null_marker`. Empty STRING values remain empty. Reject a literal source field
-  equal to the marker before finalization; quoting alone is not the collision
-  policy. A fresh extraction identity can select a different marker. Enable
-  quoted newlines and include null, empty, literal backslash-N, and marker-collision
-  cases in the BigQuery round-trip tests before implementing acceptance. Do not
-  assume PostgreSQL's default null/empty quoting is sufficient for BigQuery.
-- Source IDs, generations, sizes, and counters are parsed exactly. JSON uses
-  decimal strings for source selection IDs and generations. CSV INT64 values
-  use base-10 integer text within signed INT64 bounds, never a floating-point
-  intermediate. Count/byte-size manifest integers are bounded to exact JSON
-  integers; the receiver enforces their semantic ranges as well.
-- `decimal_text` stores the source numeric representation in a STRING landing
-  column. ea-dev uses PostgreSQL `numeric(26,7)` for numeric metrics. Preserve
-  all digits, duplicate rows, nulls, and source nonfinite values if present;
-  canonical numeric conversion reports invalid/out-of-range values separately.
-  Do not round or normalize raw source measurements during export.
-- `utc_timestamp` means ISO 8601 UTC with `Z` and source precision. Galaxy's
-  timestamp-without-time-zone fields require a verified UTC interpretation;
-  changing a session timezone alone does not establish that interpretation.
-- Booleans use PostgreSQL CSV `t`/`f`, with the declared marker for null. JSON-array
-  text fields use valid JSON inside ordinary CSV quoting. Preserve a list-valued
-  `dbkey` without reducing it arbitrarily to one value.
+Source CSV uses UTF-8, ordered headers, comma delimiters, double-quote escaping
+and standard PostgreSQL null handling. Quoted embedded newlines are valid.
+The collector checks source headers and counts once during packaging.
 
-The schema's common row envelope supplies bundle ID, site, source epoch,
-generation, and part index so uploaded rows can be associated with a component
-and bundle. Metadata required to interpret the entire observation stays in the
-manifest/capability record. Identity is independent of destination project and
-dataset names; all GCP locations and destinations remain configurable.
+Transport components are `NAME-00000.jsonl.gz`, with the common envelope and
+contract fields in each object. BigQuery loads use explicit schemas, no
+autodetection, zero tolerated bad rows and append semantics. Source IDs,
+generations and raw decimal values never pass through floating-point numbers.
 
-BigQuery's [CSV load options](https://docs.cloud.google.com/bigquery/docs/loading-data-cloud-storage-csv#csv_options)
-describe custom null markers and empty STRING handling. The actual load and
-round-trip behavior must still be verified in the development dataset.
+The manifest records each component's count and compressed SHA-256. Load-job IDs
+include bundle identity, component, part, attempt and file digest. The processor
+checks manifest/capability identity, load owner/destination/schema, digest-bearing
+job ID and loaded counts. A matching completed load is reused after response loss;
+only a confirmed failed load permits a new attempt ID. BigQuery does not provide
+an independent digest of local upload bytes.
+
 
 ## Components and decoding
 
@@ -163,35 +121,34 @@ severity nor exit code alone establishes a scheduler-enforced OOM kill.
 
 ## Completion manifest and acceptance
 
-Finalize files and checksums before publishing the manifest. Each CSV part is
+Finalize files and checksums before publishing the manifest. Each JSON Lines part is
 gzip-compressed without variable gzip timestamps; SHA-256 covers its exact
 compressed bytes. Part names are safe basenames and indexes are unique and
 contiguous within the component. Checksums identify retry files; the receiver
 also validates load metadata, schemas, membership, and parsed record counts.
 
-The intake completion row adds nullable `transport_json` alongside the unchanged
-source `manifest_json`. It carries the exact capability JSON and deterministic
+The intake completion row adds nullable `transport_json` alongside the
+`manifest_json`. It carries the exact capability JSON and deterministic
 load-job references/attempts for each part. This is transport provenance, not a
-change to source CSV fields or the frozen source manifest. Central processing
+change to source CSV fields. Central processing
 independently reads completed load-job metadata and validates destination,
-account, options, declared checksum labels and output row counts. These labels
+account, options, checksum-bearing job IDs and output row counts. These IDs
 bind the collector's retry identity; BigQuery does not expose an independent
 SHA-256 of uploaded bytes. Its `inputFileBytes` is not the compressed gzip size
 and must not be compared to the manifest's `compressedBytes`.
 
 `requestedComponents` identifies this bundle's scope. Every requested component
 appears exactly once in the manifest. A complete empty component has one
-header-only compressed part and zero records. An unsupported component has no
+empty compressed part and zero records. An unsupported component has no
 parts and a reason; it is neither an empty snapshot nor evidence of deletion.
 Unrequested components are outside this bundle. Required unsupported components
 fail preflight rather than producing an apparently successful slice.
 
 Manifest schema validation is necessary but insufficient. The receiver also
 checks INT64 limits, Galaxy release, component-set equality, part-name/component
-matching, summed counts, envelope consistency, source-key uniqueness, selected-job
+matching, summed counts, envelope consistency, selected-job
 membership, capability compatibility, and whether required families are complete.
-Multiple metric rows sharing a plugin/name are retained; duplicate source row
-IDs within one component snapshot are a separate integrity error.
+Multiple metric rows sharing a plugin/name are retained; the highest source metric ID supplies the canonical value in facts.
 
 Bundle ID is an immutable UUID; `(serverId, sourceEpoch, observationGeneration)`
 is unique and immutable. Persist the monotonically increasing generation before
@@ -241,7 +198,7 @@ recorded state history is another source where available and complete.
 
 Slice A validates BigQuery loading, acceptance and null/empty/quoted-value
 round trips on ea-dev. Full
-library/output-collection semantics and metadata decoding are implemented and
+library/output-collection semantics and metadata decoding will be implemented and
 tested in Slice B. The global storage query received EXPLAIN only; full-query
 timing remains part of the storage addition. None of these later gates is claimed
 complete by the bounded Step 1 spike.

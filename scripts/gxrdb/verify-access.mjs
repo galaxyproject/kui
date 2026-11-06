@@ -1,3 +1,4 @@
+import { definitions as makeDefinitions } from './schema.mjs';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -25,7 +26,7 @@ export async function verifyAccess() {
   if (!centralIntake.has('bigquery.tables.getData') || centralIntake.has('bigquery.tables.updateData')) throw new Error('central_intake_permissions_wrong');
   const temp = await mkdtemp(join(tmpdir(), 'gxrdb-access-'));
   try {
-    const definition = (await readJson('schemas/gxrdb/bigquery-v1.json')).tables['intake.jobs'];
+    const definition = (makeDefinitions(await readJson('schemas/gxrdb/export-v1.json'))).tables['intake.jobs'];
     const path = join(temp, 'empty-jobs.csv');
     await writeFile(path, definition.schema.fields.map(f => f.name).join(',') + '\n');
     const [ownMetadata] = await org.dataset(c.intakeDataset).table('jobs').load(path, { sourceFormat: 'CSV', skipLeadingRows: 1,

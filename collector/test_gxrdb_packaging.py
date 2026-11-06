@@ -13,7 +13,7 @@ spec = importlib.util.spec_from_file_location('packaging_collector', Path(__file
 g = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(g)
 ID = '00000000-0000-4000-8000-000000000001'
-SCHEMAS = json.loads((Path(__file__).parent/'schemas/gxrdb-v1.json').read_text())
+SCHEMAS = g.table_schemas()
 
 
 def fixture(source, empty=False):
@@ -22,7 +22,7 @@ def fixture(source, empty=False):
                'observationGeneration': '9007199254740993', 'galaxyRelease': '26.2',
                'timestampInterpretation': 'UTC', 'maxRows': 500, 'maxRuntimeSeconds': 180,
                'maxOutputBytes': 16777216, 'selection': {'entity': 'jobs', 'mode': 'id_list', 'ids': ['195']}}
-    marker = '__gxrdb_null_'+ID+'__'
+    marker = None
     cap = {'formatVersion': 1, 'galaxyRelease': '26.2', 'postgresqlVersion': '17.2',
            'gxadminVersion': '25-pre', 'exporterBuild': 'fixture-build', 'timestampInterpretation': 'UTC',
            'components': {}, 'numericMetricAllowList': [['cgroup', 'cpuacct.usage']], 'textMetrics': []}
@@ -34,12 +34,11 @@ def fixture(source, empty=False):
         columns = [f['name'] for f in SCHEMAS[name]][5:]
         cap['components'][name] = {'schemaVersion': 1, 'status': 'supported', 'columns': columns}
         with (source/(name+'.csv')).open('w', newline='') as out:
-            writer = csv.writer(out, lineterminator='\n')
+            writer = csv.writer(out, lineterminator='\n', quoting=csv.QUOTE_NOTNULL)
             writer.writerow(columns)
             if not empty:
                 writer.writerow(payload)
-    metadata = {'formatVersion': 1, 'selection': request['selection'], 'csvNullMarker': marker,
-                'observedAt': '2026-11-05T00:00:00.000000Z', 'snapshotId': '1:2:', 'capabilities': cap,
+    metadata = {'formatVersion': 1, 'selection': request['selection'], 'observedAt': '2026-11-05T00:00:00.000000Z', 'snapshotId': '1:2:', 'capabilities': cap,
                 'rows': {name: 0 if empty else 1 for name in payloads}}
     g.atomic(source/'metadata.json', metadata)
     return request, payloads
@@ -64,9 +63,13 @@ class Packaging(unittest.TestCase):
                 self.assertEqual(data, (root/'bundle-b'/part['file']).read_bytes())
                 self.assertEqual(hashlib.sha256(data).hexdigest(), part['sha256'])
                 with gzip.open(root/'bundle-a'/part['file'], 'rt', newline='') as inp:
-                    rows = list(csv.reader(inp))
-                self.assertEqual(rows[1][:5], [ID, 'usegalaxy-org', 'test', '9007199254740993', '0'])
-                self.assertEqual(rows[1][5:], payloads[component['name']])
+                    rows = [json.loads(line) for line in inp]
+                self.assertEqual(rows[0]['observation_generation'], '9007199254740993')
+                fields = [f['name'] for f in SCHEMAS[component['name']]][5:]
+                expected = dict(zip(fields, payloads[component['name']]))
+                if component['name'] == 'jobs':
+                    expected['imported'] = False
+                self.assertEqual({k:rows[0][k] for k in fields}, expected)
             self.assertTrue((root/'source/metadata.json').exists())
 
     def test_empty_snapshots_remain_complete(self):
@@ -105,10 +108,7 @@ class Packaging(unittest.TestCase):
             try:
                 c.state['pending'] = [ID]
                 g.atomic(root/'requests'/(ID+'.json'), request)
-                def crash(config, point):
-                    if point == 'after_source_export':
-                        raise SystemExit(75)
-                with patch.object(g, 'fault', side_effect=crash), patch.object(g.subprocess, 'Popen') as process:
+                with patch.object(g, 'package_source', side_effect=SystemExit(75)), patch.object(g.subprocess, 'Popen') as process:
                     with self.assertRaises(SystemExit):
                         c.recover_and_upload()
                     process.assert_not_called()

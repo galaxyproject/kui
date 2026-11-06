@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { execFileSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 import { readJson, validateConfig, QueryBudget } from './lib.mjs';
 import { definitions } from './schema.mjs';
@@ -23,11 +24,10 @@ test('pilot config refuses unrelated datasets, colliding identities and unsafe i
     { githubRepositoryId: "123' || true" },
   ]) assert.throws(() => validateConfig({ ...c, ...patch }));
 });
-test('checked-in warehouse schema preserves every contract field, its order and exact types', async () => {
+test('generated Node and Python warehouse schemas agree on field order and exact types', async () => {
   const contract = await readJson('schemas/gxrdb/export-v1.json');
-  assert.deepEqual(await readJson('schemas/gxrdb/bigquery-v1.json'), definitions(contract));
   const warehouse = definitions(contract);
-  assert.deepEqual(await readJson('collector/schemas/gxrdb-v1.json'), Object.fromEntries(['jobs','numeric_metrics','manifests'].map(n=>[n,warehouse.tables[`intake.${n}`].schema.fields])));
+  assert.deepEqual(JSON.parse(execFileSync('python3',['-c',"import sys,json; sys.path.insert(0,'collector'); import gxrdb; print(json.dumps(gxrdb.table_schemas()))"])), Object.fromEntries(['jobs','numeric_metrics','manifests'].map(n=>[n,warehouse.tables[`intake.${n}`].schema.fields])));
   const fields = warehouse.tables['intake.numeric_metrics'].schema.fields;
   assert.equal(fields.find(f => f.name === 'metric_value_raw').type, 'STRING');
   assert.equal(fields.find(f => f.name === 'job_id').type, 'INTEGER');

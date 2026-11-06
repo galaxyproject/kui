@@ -24,7 +24,7 @@ on pull requests or manual dispatch. There is no requirement to contact a live
 Galaxy database for frontend checks.
 
 All workflows select the organization's `gcp-runner` label, matching
-`galaxy-k8s-boot`. CI explicitly installs Node from `.nvmrc` and Python 3.12 for
+`galaxy-k8s-boot`. CI explicitly installs Node from `.nvmrc` and Python 3.13 for
 the collector tests. Runner access is managed by the organization; selecting the
 label does not register a new runner.
 

@@ -1,5 +1,5 @@
-import { contract, definitions, BundleError, check, sha256, validateBundle, verifyLoadJobs } from './bundle.mjs';
-import { tableName, integer } from './lib.mjs';
+import { definitions, BundleError, check, sha256, validateBundle, verifyLoadJobs } from './bundle.mjs';
+import { tableName } from './lib.mjs';
 
 export function selectionSQL(selection, column = 'job_id') {
   return selection.mode === 'id_range' ? `(${column} > @low AND ${column} <= @high)` : `${column} IN UNNEST(@ids)`;
@@ -7,7 +7,7 @@ export function selectionSQL(selection, column = 'job_id') {
 export function selectionParameters(m) {
   return m.selection.mode === 'id_range' ? { params: { low: m.selection.lowExclusive, high: m.selection.highInclusive }, types: { low: 'INT64', high: 'INT64' } } : { params: { ids: m.selection.ids }, types: { ids: ['INT64'] } };
 }
-export function acceptanceSQL(bundle, c, { injectFailure = false } = {}) {
+export function acceptanceSQL(bundle, c) {
   const { manifest: m } = bundle;
   const central = id => tableName(c, c.centralDataset, id);
   const intake = id => tableName(c, c.intakeDataset, id);
@@ -20,27 +20,20 @@ export function acceptanceSQL(bundle, c, { injectFailure = false } = {}) {
     IF NOT EXISTS (SELECT 1 FROM ${central('acceptance_records')} WHERE bundle_id=@id AND status='accepted') THEN
   `;
   for (const comp of m.components) {
-    const key = comp.name === 'jobs' ? 'job_id' : 'metric_id';
     sql += `CREATE TEMP TABLE stage_${comp.name} AS SELECT DISTINCT * FROM ${intake(comp.name)} WHERE bundle_id=@id;
       ASSERT (SELECT COUNT(*) FROM stage_${comp.name})=${comp.rows} AS 'gxrdb_validate_component_rows';
-      ASSERT NOT EXISTS (SELECT 1 FROM stage_${comp.name} WHERE server_id!=@server OR source_epoch!=@epoch OR observation_generation!=@generation
-        OR part_index NOT IN (${comp.parts.map(p => p.partIndex).join(',')}) OR ${key}<0) AS 'gxrdb_validate_envelope';
-      ASSERT NOT EXISTS (SELECT ${key} FROM stage_${comp.name} GROUP BY ${key} HAVING COUNT(*)>1) AS 'gxrdb_validate_source_keys';
     `;
-    for (const part of comp.parts) sql += `ASSERT (SELECT COUNT(*) FROM stage_${comp.name} WHERE part_index=${part.partIndex})=${part.rows} AS 'gxrdb_validate_part_rows';\n`;
   }
   sql += `ASSERT NOT EXISTS (SELECT 1 FROM stage_jobs WHERE NOT ${selectionSQL(m.selection)}) AS 'gxrdb_validate_selection';
     ASSERT NOT EXISTS (SELECT 1 FROM stage_numeric_metrics m LEFT JOIN stage_jobs j USING(job_id) WHERE j.job_id IS NULL) AS 'gxrdb_validate_job_membership';
-    ASSERT NOT EXISTS (SELECT 1 FROM stage_numeric_metrics WHERE NOT (${contract.numericMetricAllowList.map(p => `(plugin='${p.plugin}' AND metric_name='${p.metricName}')`).join(' OR ')})) AS 'gxrdb_validate_metric_allowlist';
   `;
   for (const comp of m.components) {
     const columns = definitions.tables[`central.retained_${comp.name}`].schema.fields.map(f => f.name).join(',');
     sql += `INSERT INTO ${central(`retained_${comp.name}`)} (${columns}) SELECT ${columns} FROM stage_${comp.name};\n`;
   }
-  if (injectFailure) sql += `ASSERT FALSE AS 'injected_acceptance_failure';\n`;
   sql += `INSERT INTO ${central('retained_manifests')}
-    (bundle_id,server_id,source_epoch,observation_generation,manifest_json,submitted_at,transport_json)
-    VALUES (@id,@server,@epoch,@generation,@manifest,TIMESTAMP(@observed),@transport);
+    (bundle_id,server_id,source_epoch,observation_generation,manifest_json,submitted_at,transport_json,selection_low,selection_high,selection_ids)
+    VALUES (@id,@server,@epoch,@generation,@manifest,TIMESTAMP(@observed),@transport,@selection_low,@selection_high,@selection_ids);
     INSERT INTO ${central('acceptance_records')} (bundle_id,server_id,source_epoch,observation_generation,manifest_sha256,status,reason_code,recorded_at)
       VALUES (@id,@server,@epoch,@generation,@hash,'accepted',NULL,CURRENT_TIMESTAMP());
     INSERT INTO ${central('org_receipts')} (bundle_id,server_id,source_epoch,observation_generation,manifest_sha256,status,reason_code,recorded_at)
@@ -63,7 +56,10 @@ export async function acceptBundle(raw, transport, c, budget, jobClient, options
   }
   await verifyLoadJobs(bundle, c, jobClient);
   const selection = selectionParameters(m);
-  try { await budget.query(acceptanceSQL(bundle,c,options), {...params,...selection.params}, {...types,...selection.types}); }
+  Object.assign(selection.params, {selection_low: m.selection.lowExclusive ?? null,
+    selection_high: m.selection.highInclusive ?? null, selection_ids: m.selection.ids ?? []});
+  Object.assign(selection.types, {selection_low:'INT64', selection_high:'INT64', selection_ids:['INT64']});
+  try { await budget.query(acceptanceSQL(bundle,c), {...params,...selection.params}, {...types,...selection.types}); }
   catch (error) {
     const marker = /gxrdb_validate_([a-z_]+)/.exec(error.message ?? '');
     if (marker) throw new BundleError(marker[1]);

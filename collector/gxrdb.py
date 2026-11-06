@@ -9,7 +9,6 @@ import io
 import json
 import os
 from pathlib import Path
-import random
 import re
 import shutil
 import signal
@@ -17,9 +16,6 @@ import subprocess
 import sys
 import tempfile
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
 import uuid
 
 MAX_INT64 = 9223372036854775807
@@ -64,27 +60,34 @@ def configuration(path):
     if not Path(c['stateDirectory']).is_absolute() or Path(c['stateDirectory']) in [Path('/'), Path.home()]:
         raise ValueError('invalid_state_directory')
     for key, default, minimum, maximum in [
-        ('maxSpoolBytes', 268435456, 16777216, 10737418240), ('maxOutputBytes', 16777216, 1024, 1073741824),
-        ('maxRows', 500, 1, 50000), ('maxPendingBundles', 4, 1, 100), ('maxPendingJobs', 50000, 1, 1000000),
-        ('maxRuntimeSeconds', 600, 1, 3600), ('acceptedGraceSeconds', 3600, 0, 604800),
+        ('maxSpoolBytes', 8589934592, 16777216, 21474836480), ('maxOutputBytes', 268435456, 1024, 1073741824),
+        ('maxRows', 50000, 1, 50000), ('maxRangeWidth', 50000, 1, 50000), ('maxPendingBundles', 32, 1, 200), ('maxPendingJobs', 50000, 1, 1000000),
+        ('maxRuntimeSeconds', 3600, 1, 3600), ('acceptedGraceSeconds', 3600, 0, 604800),
     ]:
         c.setdefault(key, default)
         if type(c[key]) is not int or not minimum <= c[key] <= maximum:
             raise ValueError('invalid_budget')
     c.setdefault('location', 'US')
-    c.setdefault('maximumBytesBilled', '104857600')
+    c.setdefault('maximumBytesBilled', '4294967296')
     number(c['maximumBytesBilled'])
     c.setdefault('gxadmin', 'gxadmin')
-    c.setdefault('tokenCommand', ['gcloud', 'auth', 'print-access-token'])
-    if not isinstance(c['tokenCommand'], list) or not all(isinstance(x, str) for x in c['tokenCommand']):
-        raise ValueError('invalid_token_command')
+    if sys.version_info < (3, 13):
+        raise ValueError('Python 3.13 or later is required')
+    c.setdefault('bqCommand', ['bq'])
     return c
 
 
-class APIError(Exception):
-    def __init__(self, status):
-        self.status = status
-        super().__init__('bigquery_http_' + str(status))
+def table_schemas():
+    contract = json.loads((Path(__file__).parent.parent/'schemas/gxrdb/export-v1.json').read_text())
+    types = {'uuid':'STRING', 'string':'STRING', 'int64':'INTEGER', 'utc_timestamp':'TIMESTAMP',
+             'boolean':'BOOLEAN', 'decimal_text':'STRING', 'json_array_text':'STRING'}
+    schemas = {name: [{'name':f['name'], 'type':types[f['type']], 'mode':'NULLABLE' if f['nullable'] else 'REQUIRED'}
+        for f in contract['envelope']+contract['components'][name]['fields']] for name in ['jobs','numeric_metrics']}
+    schemas['manifests'] = [{'name':n, 'type':t, 'mode':m} for n,t,m in [
+        ('bundle_id','STRING','REQUIRED'),('server_id','STRING','REQUIRED'),('source_epoch','STRING','REQUIRED'),
+        ('observation_generation','INTEGER','REQUIRED'),('manifest_json','STRING','REQUIRED'),
+        ('submitted_at','TIMESTAMP','REQUIRED'),('transport_json','STRING','NULLABLE')]]
+    return schemas
 
 
 class BigQuery:
@@ -92,54 +95,32 @@ class BigQuery:
         self.c = c
         self.deadline = time.monotonic() + c['maxRuntimeSeconds']
         self.remaining = int(c['maximumBytesBilled'])
-        self.token = None
-        self.token_until = 0
 
     def check_time(self):
         if time.monotonic() >= self.deadline:
             raise ValueError('run_budget_exceeded')
 
-    def call(self, method, path, data=None, content_type='application/json', upload=False):
-        base = 'https://bigquery.googleapis.com/' + ('upload/' if upload else '') + 'bigquery/v2/'
-        for attempt in range(3):
-            self.check_time()
-            if time.monotonic() > self.token_until:
-                p = subprocess.run(self.c['tokenCommand'], capture_output=True, check=True, timeout=30)
-                self.token = p.stdout.decode().strip()
-                self.token_until = time.monotonic() + 240
-                if not self.token:
-                    raise ValueError('missing_access_token')
-            body = data if isinstance(data, bytes) else (canonical(data) if data is not None else None)
-            req = urllib.request.Request(base + path, method=method, data=body,
-                headers={'Authorization': 'Bearer ' + self.token, 'Content-Type': content_type})
-            try:
-                with urllib.request.urlopen(req, timeout=min(60, max(1, self.deadline-time.monotonic()))) as response:
-                    return json.load(response)
-            except urllib.error.HTTPError as exc:
-                # Error bodies can quote private source rows. Never log them.
-                if exc.code == 401:
-                    self.token_until = 0
-                elif exc.code not in [408, 429, 500, 502, 503, 504]:
-                    raise APIError(exc.code) from None
-            except (urllib.error.URLError, TimeoutError):
-                pass
-            time.sleep(min(2 ** attempt + random.random(), 5))
-        raise ValueError('transport_retry_exhausted')
+    def command(self, args, job_id=None):
+        self.check_time()
+        cmd = self.c.get('bqCommand', ['bq']) + ['--quiet', '--format=json',
+            '--project_id='+self.c['projectId'], '--location='+self.c['location']]
+        if job_id:
+            cmd += ['--job_id='+job_id]
+        return subprocess.run(cmd + args, capture_output=True, text=True,
+            timeout=max(1, self.deadline-time.monotonic()))
 
     def job(self, job_id):
-        try:
-            return self.call('GET', f"projects/{self.c['projectId']}/jobs/{job_id}?location={self.c['location']}")
-        except APIError as e:
-            if e.status == 404:
+        result = self.command(['show', '-j', job_id])
+        if result.returncode:
+            if 'Not found: Job' in result.stdout + result.stderr:
                 return None
-            raise
+            raise RuntimeError(result.stderr or result.stdout)
+        return json.loads(result.stdout)
 
     def wait(self, job_id):
         while True:
             job = self.job(job_id)
-            if job is None:
-                return None
-            if job['status']['state'] == 'DONE':
+            if job is None or job['status']['state'] == 'DONE':
                 return job
             self.check_time()
             time.sleep(1)
@@ -148,52 +129,38 @@ class BigQuery:
         if self.remaining <= 0:
             raise ValueError('query_budget_exceeded')
         job_id = 'gxrdb_read_' + uuid.uuid4().hex
-        config = {'query': sql, 'useLegacySql': False, 'maximumBytesBilled': str(self.remaining), 'parameterMode': 'NAMED',
-            'queryParameters': [{'name': k, 'parameterType': {'type': 'STRING'}, 'parameterValue': {'value': v}} for k, v in (params or {}).items()]}
-        self.call('POST', f"projects/{self.c['projectId']}/jobs", {'jobReference': {'projectId': self.c['projectId'], 'jobId': job_id, 'location': self.c['location']}, 'configuration': {'query': config}})
+        result = self.command(['query', '--use_legacy_sql=false', '--max_rows=1000',
+            '--maximum_bytes_billed='+str(self.remaining)] +
+            ['--parameter='+k+':STRING:'+v for k,v in (params or {}).items()] + [sql], job_id)
         job = self.wait(job_id)
-        if not job or job['status'].get('errorResult'):
-            raise ValueError('receipt_query_failed')
+        if job is None or job['status'].get('errorResult'):
+            self.remaining = 0
+            raise RuntimeError(result.stderr or result.stdout or 'receipt_query_failed')
         self.remaining -= int(job.get('statistics', {}).get('query', {}).get('totalBytesBilled', '0'))
         if self.remaining < 0:
             raise ValueError('query_budget_exceeded')
-        result = self.call('GET', f"projects/{self.c['projectId']}/queries/{job_id}?location={self.c['location']}&maxResults=1000")
-        if result.get('pageToken'):
-            raise ValueError('unexpected_receipt_pagination')
-        names = [f['name'] for f in result['schema']['fields']]
-        return [{name: field.get('v') for name, field in zip(names, row['f'])} for row in result.get('rows', [])]
+        if result.returncode:
+            raise RuntimeError(result.stderr or result.stdout)
+        return json.loads(result.stdout)
 
-    def load(self, path, table, schema, job_id, labels, null_marker=None, source_format='CSV'):
-        config = {'destinationTable': {'projectId': self.c['projectId'], 'datasetId': self.c['intakeDataset'], 'tableId': table},
-            'sourceFormat': source_format, 'schema': {'fields': schema}, 'autodetect': False,
-            'writeDisposition': 'WRITE_APPEND', 'createDisposition': 'CREATE_NEVER', 'maxBadRecords': 0,
-            'ignoreUnknownValues': False}
-        if source_format == 'CSV':
-            config.update(skipLeadingRows=1, allowQuotedNewlines=True, allowJaggedRows=False, nullMarker=null_marker, encoding='UTF-8', quote='"', fieldDelimiter=',')
-        meta = {'jobReference': {'projectId': self.c['projectId'], 'jobId': job_id, 'location': self.c['location']}, 'configuration': {'load': config, 'labels': labels}}
-        boundary = 'gxrdb_' + uuid.uuid4().hex
-        body = b'--' + boundary.encode() + b'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + canonical(meta)
-        body += b'\r\n--' + boundary.encode() + b'\r\nContent-Type: application/octet-stream\r\n\r\n' + path.read_bytes() + b'\r\n--' + boundary.encode() + b'--\r\n'
-        try:
-            self.call('POST', f"projects/{self.c['projectId']}/jobs?uploadType=multipart", body, 'multipart/related; boundary=' + boundary, upload=True)
-        except APIError as e:
-            if e.status != 409:
-                raise
-        return self.wait(job_id)
-
-
-def fault(c, name):
-    if c.get('environment') == 'development' and os.environ.get('KUI_GXRDB_TEST_CRASH_AT') == name:
-        os._exit(75)
+    def load(self, path, table, schema, job_id, source_format='NEWLINE_DELIMITED_JSON'):
+        schema_path = path.parent/(table+'.schema.json')
+        atomic(schema_path, schema)
+        args = ['load', '--source_format='+source_format, '--noreplace', '--noautodetect', '--max_bad_records=0']
+        result = self.command(args + [self.c['projectId']+':'+self.c['intakeDataset']+'.'+table,
+            str(path), str(schema_path)], job_id)
+        job = self.wait(job_id)
+        if job is None:
+            raise RuntimeError(result.stderr or result.stdout or 'load_response_unknown')
+        return job
 
 
 def package_source(source, output, request, schemas):
     metadata = json.loads((source/'metadata.json').read_text())
     cap = metadata['capabilities']
-    marker = '__gxrdb_null_' + request['bundleId'] + '__'
     if (metadata.get('formatVersion') != 1 or cap.get('formatVersion') != 1
-            or metadata.get('selection') != request['selection'] or metadata.get('csvNullMarker') != marker
-            or cap.get('galaxyRelease') != request['galaxyRelease'] or cap.get('timestampInterpretation') != 'UTC'):
+            or metadata.get('selection') != request['selection']
+            or cap.get('timestampInterpretation') != 'UTC'):
         raise ValueError('source_export_mismatch')
     wire_cap = {k: v for k, v in cap.items() if k not in ['formatVersion', 'gxadminVersion']}
     wire_cap['contractVersion'] = '1.0.0'
@@ -204,6 +171,7 @@ def package_source(source, output, request, schemas):
     work = Path(tempfile.mkdtemp(prefix='.packaging-', dir=output.parent.parent))
     try:
         components = []
+        output_bytes = 0
         csv.field_size_limit(request['maxOutputBytes'])
         envelope = [request[k] for k in ['bundleId', 'serverId', 'sourceEpoch', 'observationGeneration']] + ['0']
         for name in ['jobs', 'numeric_metrics']:
@@ -213,20 +181,26 @@ def package_source(source, output, request, schemas):
             if declared.get('schemaVersion') != 1 or declared.get('status') != 'supported' or declared.get('columns') != fields:
                 raise ValueError('source_columns_mismatch')
             wire_cap['components'][name] = {**declared, 'columns': columns}
-            path = work/(name+'-00000.csv.gz')
+            path = work/(name+'-00000.jsonl.gz')
             count = 0
             with (source/(name+'.csv')).open(encoding='utf-8', newline='') as inp, path.open('wb') as raw:
-                rows = csv.reader(inp, strict=True)
+                rows = csv.reader(inp, strict=True, quoting=csv.QUOTE_NOTNULL)
                 if next(rows) != fields:
                     raise ValueError('source_header_mismatch')
                 with gzip.GzipFile(filename='', fileobj=raw, mode='wb', mtime=0) as compressed:
                     with io.TextIOWrapper(compressed, encoding='utf-8', newline='') as text:
-                        writer = csv.writer(text, lineterminator='\n')
-                        writer.writerow(columns)
                         for row in rows:
                             if len(row) != len(fields):
                                 raise ValueError('source_row_width_mismatch')
-                            writer.writerow(envelope+row)
+                            values = dict(zip(columns, envelope+row))
+                            for field in schemas[name]:
+                                if field['type'] == 'BOOLEAN' and values[field['name']] is not None:
+                                    values[field['name']] = values[field['name']] == 't'
+                            line = canonical(values) + b'\n'
+                            output_bytes += len(line)
+                            if output_bytes > request['maxOutputBytes']:
+                                raise ValueError('bundle_output_budget_exceeded')
+                            text.write(line.decode())
                             count += 1
             if type(metadata['rows'].get(name)) is not int or count != metadata['rows'][name]:
                 raise ValueError('source_count_mismatch')
@@ -238,7 +212,7 @@ def package_source(source, output, request, schemas):
         capbytes = canonical(wire_cap)
         (work/'capabilities.json').write_bytes(capbytes)
         manifest = {'contractVersion': '1.0.0', **{k: request[k] for k in ['bundleId', 'serverId', 'sourceEpoch', 'observationGeneration', 'selection']},
-            'observedAt': metadata['observedAt'], 'csvNullMarker': marker, 'requestedComponents': ['jobs','numeric_metrics'], 'components': components,
+            'observedAt': metadata['observedAt'], 'requestedComponents': ['jobs','numeric_metrics'], 'components': components,
             'source': {**{k: cap[k] for k in ['galaxyRelease','postgresqlVersion','gxadminVersion','exporterBuild','timestampInterpretation']},
                 'capabilitiesSha256': hashlib.sha256(capbytes).hexdigest(), 'snapshotId': metadata['snapshotId']}}
         (work/'manifest.json').write_bytes(canonical(manifest))
@@ -281,7 +255,7 @@ class Collector:
         self.state = json.loads(path.read_text()) if path.exists() else {'version': 1, 'serverId': c['serverId'], 'sourceEpoch': c['sourceEpoch'], 'nextGeneration': '1', 'pending': [], 'pendingJobs': [], 'checkpoint': None}
         if (self.state['serverId'], self.state['sourceEpoch']) != (c['serverId'], c['sourceEpoch']):
             raise ValueError('state_source_identity_mismatch')
-        self.schema = json.loads((Path(__file__).parent/'schemas/gxrdb-v1.json').read_text())
+        self.schema = table_schemas()
 
     def save(self):
         atomic(self.root/'state.json', self.state)
@@ -296,7 +270,7 @@ class Collector:
             raise ValueError('ambiguous_acceptance_receipt')
         return next(iter(statuses)) if statuses else None
 
-    def loaded(self, bundle, table, part_index, path, schema, marker=None, source_format='CSV'):
+    def loaded(self, bundle, table, part_index, path, schema, source_format='NEWLINE_DELIMITED_JSON'):
         state_path = bundle/'upload-state.json'
         state = json.loads(state_path.read_text()) if state_path.exists() else {}
         key = table + '-' + str(part_index)
@@ -308,18 +282,17 @@ class Collector:
             if entry['attempt'] > 100:
                 raise ValueError('load_attempt_budget_exhausted')
             entry['sha256'] = sha
-            job_id = 'gxrdb_' + bundle.name.replace('-', '') + '_' + table + '_' + str(part_index) + '_a' + str(entry['attempt'])
+            job_id = ('gxrdb_' + bundle.name.replace('-', '') + '_' + table + '_' + str(part_index) + '_a' + str(entry['attempt']) + '_h' + sha)
             entry['jobId'] = job_id
             atomic(state_path, state)
             job = self.api.wait(job_id)
             if job is None:
-                labels = {'application': 'gxrdb', 'bundle': bundle.name, 'component': table, 'part': str(part_index), 'sha256_0': sha[:32], 'sha256_1': sha[32:]}
-                job = self.api.load(path, table, schema, job_id, labels, marker, source_format)
-                fault(self.c, 'after_upload_response')
+                job = self.api.load(path, table, schema, job_id, source_format)
             if job is None:
                 raise ValueError('load_response_unknown')
             if job['status'].get('errorResult'):
                 # Only a confirmed failed atomic load permits a new attempt ID.
+                entry.pop('jobId', None)
                 entry['attempt'] += 1
                 atomic(state_path, state)
                 continue
@@ -341,8 +314,7 @@ class Collector:
                 p = bundle/part['file']
                 if p.stat().st_size != part['compressedBytes'] or hashlib.sha256(p.read_bytes()).hexdigest() != part['sha256']:
                     raise ValueError('immutable_spool_changed')
-                parts.append(self.loaded(bundle, component['name'], part['partIndex'], p, self.schema[component['name']], m['csvNullMarker']))
-                fault(self.c, 'after_component_' + component['name'])
+                parts.append(self.loaded(bundle, component['name'], part['partIndex'], p, self.schema[component['name']], source_format='NEWLINE_DELIMITED_JSON'))
         submission = bundle/'submission.jsonl'
         if not submission.exists():
             row = {'bundle_id': m['bundleId'], 'server_id': m['serverId'], 'source_epoch': m['sourceEpoch'], 'observation_generation': m['observationGeneration'],
@@ -350,9 +322,7 @@ class Collector:
                 'transport_json': json.dumps({'capabilitiesJson': (bundle/'capabilities.json').read_text(), 'parts': parts}, sort_keys=True, separators=(',', ':'))}
             with submission.open('wb') as f:
                 f.write(canonical(row) + b'\n'); f.flush(); os.fsync(f.fileno())
-        fault(self.c, 'before_manifest')
         self.loaded(bundle, 'manifests', 0, submission, self.schema['manifests'], source_format='NEWLINE_DELIMITED_JSON')
-        fault(self.c, 'after_manifest')
         return self.receipt(m, sha) == 'accepted'
 
     def checkpoint(self, bundle):
@@ -363,17 +333,20 @@ class Collector:
             pending.difference_update(s['ids'])
         else:
             pending = {x for x in pending if not number(s['lowExclusive']) < number(x) <= number(s['highInclusive'])}
-        with gzip.open(bundle/'jobs-00000.csv.gz', 'rt', newline='') as f:
-            for row in csv.DictReader(f):
-                if row['state_raw'] not in TERMINAL:
-                    pending.add(row['job_id'])
+        component = next((x for x in m.get('components', []) if x['name'] == 'jobs'), None)
+        paths = [bundle/p['file'] for p in component['parts']] if component else [bundle/'jobs-00000.jsonl.gz']
+        for path in paths:
+            with gzip.open(path, 'rt', newline='') as f:
+                rows = map(json.loads, f)
+                for row in rows:
+                    if row['state_raw'] not in TERMINAL:
+                        pending.add(row['job_id'])
         if len(pending) > self.c['maxPendingJobs']:
             raise ValueError('pending_jobs_budget_exceeded')
         self.state['pendingJobs'] = sorted(pending, key=number)
         self.state['checkpoint'] = {'bundleId': m['bundleId'], 'observationGeneration': m['observationGeneration'], 'selection': s, 'coverageVerified': False}
         self.state['pending'].remove(m['bundleId'])
         self.save()
-        fault(self.c, 'after_checkpoint')
         archive = self.root/'accepted'
         archive.mkdir(mode=0o700, exist_ok=True)
         os.replace(bundle, archive/bundle.name)
@@ -411,8 +384,8 @@ class Collector:
             if not bundle.exists():
                 request = json.loads((self.root/'requests'/(identity+'.json')).read_text())
                 source = self.root/'source'/identity
-                source_request = {k: request[k] for k in ['galaxyRelease','timestampInterpretation','selection','maxRows','maxOutputBytes','maxRuntimeSeconds']}
-                source_request['csvNullMarker'] = '__gxrdb_null_' + identity + '__'
+                source_request = {k: request[k] for k in ['timestampInterpretation','selection','maxRows','maxOutputBytes','maxRuntimeSeconds']}
+                source_request['maxRangeWidth'] = self.c.get('maxRangeWidth', 50000)
                 request_path = self.root/'requests'/(identity+'.source.json')
                 atomic(request_path, source_request)
                 if not source.exists():
@@ -430,10 +403,8 @@ class Collector:
                             raise ValueError('source_run_budget_exceeded') from None
                         if result:
                             raise ValueError('source_export_failed')
-                fault(self.c, 'after_source_export')
                 package_source(source, bundle, request, self.schema)
                 shutil.rmtree(source)
-                fault(self.c, 'after_export')
             ready.append((bundle, self.upload(bundle)))
         for bundle, accepted in ready:
             if not accepted:
@@ -485,13 +456,12 @@ class Collector:
         if generation >= MAX_INT64:
             raise ValueError('generation_exhausted')
         identity = str(uuid.uuid4())
-        request = {k: self.c[k] for k in ['serverId','sourceEpoch','galaxyRelease','timestampInterpretation','maxRows','maxOutputBytes']}
-        request.update(bundleId=identity, observationGeneration=str(generation), selection=selection, maxRuntimeSeconds=min(self.c['maxRuntimeSeconds'],1800))
+        request = {k: self.c[k] for k in ['serverId','sourceEpoch','timestampInterpretation','maxRows','maxOutputBytes']}
+        request.update(bundleId=identity, observationGeneration=str(generation), selection=selection, maxRuntimeSeconds=min(self.c['maxRuntimeSeconds'],600))
         atomic(self.root/'requests'/(identity+'.json'),request)
         self.state['nextGeneration'] = str(generation+1)
         self.state['pending'].append(identity)
         self.save()
-        fault(self.c, 'after_reservation')
         self.recover_and_upload()
 
 
@@ -512,7 +482,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception as exc:
-        # Never log private API error bodies, SQL, source rows or credentials.
-        code = str(exc) if isinstance(exc, (ValueError,APIError)) else type(exc).__name__
-        print(json.dumps({'status':'failed','reason':code}),file=sys.stderr)
+        print(str(exc), file=sys.stderr)
         sys.exit(1)

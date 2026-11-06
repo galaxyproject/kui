@@ -1,3 +1,4 @@
+import { definitions as makeDefinitions } from './schema.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { config, clients, readJson, serviceAccount, providerCondition, isMain, failure } from './lib.mjs';
@@ -19,7 +20,7 @@ export function datasetAccess(c, operator, layer) {
 }
 export async function provision(apply = false, grantLoadInspector = false) {
   const c = await config();
-  const defs = await readJson('schemas/gxrdb/bigquery-v1.json');
+  const defs = makeDefinitions(await readJson('schemas/gxrdb/export-v1.json'));
   if (!apply) {
     console.log(JSON.stringify({ project: c.projectId, datasets: [c.intakeDataset, c.centralDataset], tables: Object.keys(defs.tables).length,
       serviceAccounts: [c.orgServiceAccountId, c.centralServiceAccountId], providerCondition: providerCondition(c),

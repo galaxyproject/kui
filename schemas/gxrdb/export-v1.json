@@ -1,6 +1,6 @@
 {
   "contractVersion": "1.0.0",
-  "status": "frozen_for_initial_implementation",
+  "status": "development",
   "minimumGalaxyRelease": "26.1",
   "envelope": [
     {

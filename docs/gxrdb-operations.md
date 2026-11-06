@@ -24,8 +24,8 @@ Both datasets are private, with explicit cleanup and no automatic table/partitio
 expiry. Source IDs and generations are exact INT64s; raw numeric measurements
 remain STRINGs. Component observations use ingestion-time partitions. Facts and
 monthly summaries use creation-month partitions and require partition filters.
-Schemas are generated with `node scripts/gxrdb/schema.mjs` from the shared
-[export contract](gxrdb-export-contract.md).
+Schemas are generated at runtime from the shared
+[export contract](gxrdb-export-contract.md). `node scripts/gxrdb/schema.mjs` prints the complete BigQuery definitions for inspection.
 
 ## Provisioning and access checks
 
@@ -71,13 +71,17 @@ that provider and the central account. No other server identity is provisioned.
 ## Collector runtime and a bounded manual capture
 
 The site needs a gxadmin build containing `galaxy export-job-observations`, psql,
-Python 3, gcloud/bq and jq, Galaxy connection configuration, and a private writable
-state directory. The exporter is developed in gxadmin; KUI contains no Galaxy SQL.
-Check the running Galaxy application release (26.1 minimum) and the site's UTC
-interpretation; recorded job versions do not establish the running release.
+Python 3.13 or later, gcloud/bq and jq, Galaxy connection configuration, and a
+private writable state directory. Python 3.13 includes the required
+[CSV reader null-handling fix](https://docs.python.org/3.12/library/csv.html#csv.QUOTE_NOTNULL).
+Keep `collector/` and `schemas/gxrdb/export-v1.json` in their repository layout;
+the collector derives its schemas from that contract. The exporter is developed in gxadmin; KUI contains no Galaxy SQL.
+gxadmin derives the recorded Galaxy release from the latest version-bearing
+job and requires 26.1 or later. Confirm the site's UTC interpretation. This source
+value is provenance, not a separate application-version inventory.
 
 1. Copy `collector/gxrdb.conf.sample.json` to a private configuration file and
-   set source identity, verified release, destination and absolute state path.
+   set source identity, destination and absolute state path.
 2. In `kui.conf`, set `GXRDB_ENABLED=true` and `GXRDB_COLLECTOR_CONFIG` to that
    file. Use the site's own intake identity through the normal gcloud setup.
 3. Provide a bounded selection JSON, with IDs encoded as decimal strings:
@@ -96,49 +100,53 @@ The explicit mode does not require legacy monthly collector variables. Normal
 monthly collection continues on its existing path; automatic discovery, pending
 refresh and reconciliation queues follow in the monthly lifecycle step.
 
-Defaults bound a run to 500 selected IDs, 16 MiB of source output, 256 MiB of local
-spool, four unaccepted bundles, 50,000 pending jobs and ten minutes. gxadmin uses
-one read-only repeatable-read transaction, finite query/lock timeouts, an output
-budget. The collector holds a local exclusive lock to prevent overlapping
-runs. State/spool directories must be private.
+Development sizing targets 50,000-ID ranges, with an independent 50,000-row
+cap, 256 MiB of source/packaged output, 8 GiB of local spool and 32 unaccepted
+bundles. Measure output on each source before adjusting these limits. The collector bounds each run to one
+hour, 4 GiB of billed query bytes and 50,000 pending jobs. gxadmin uses one
+read-only repeatable-read transaction,
+120-second statement and three-second lock timeouts. The collector holds an
+exclusive lock and preserves unfinished work. Budgets stop collection without
+truncating source data.
 
 ## Upload, acceptance and recovery
 
 The collector saves a generation and UUID before extraction. gxadmin writes
 `jobs.csv`, `numeric_metrics.csv` and `metadata.json` from one source snapshot.
 Its format-version-1 interface contains Galaxy fields, schema capabilities,
-selection, observed time, snapshot ID and the CSV null marker. It does not know
+selection, observed time and snapshot ID. It does not know
 site identities, observation generations, gxrdb manifests or BigQuery.
 
 The collector validates the source metadata and headers, adds the common
-site/bundle/generation columns, and produces deterministic gzip parts,
-checksums, the wire capability record and the v1 completion manifest. Payload
-values remain strings throughout packaging; numeric counters and IDs are never
+site/bundle/generation columns, and produces deterministic gzipped JSON Lines parts,
+checksums, the wire capability record and the v1 completion manifest. IDs and numeric
+counters remain strings throughout packaging and are never
 converted through floating point. `sourceFormatVersion` in the capability
-record identifies the native export format. The receiver's wire contract is
-unchanged. Completed files are immutable. Repeated upload attempts inspect the original deterministic load-job ID;
+record identifies the native export format. Completed files are immutable. Repeated upload attempts inspect the original deterministic load-job ID;
 a new attempt ID is allowed only after a confirmed atomic load failure.
 
 Component uploads are followed by a completion submission containing the source
 manifest, capability record and load-job references. Central processing checks
 manifest and capability compatibility, actual load owner/destination/options,
-checksums in job labels, parsed counts, source keys, selection membership and
-metric allow-lists. The checksum identifies the collector's immutable upload;
+checksums encoded in deterministic load-job IDs, component row counts and
+selection membership. The source owns the metric allow-list. Per-part row counts
+are checked against load metadata, without repeated SQL assertions. Site uploads
+use `bq load --job_id`, `bq show -j` and `bq query`; no custom REST client is needed. The checksum identifies the collector's immutable upload;
 BigQuery metadata does not provide an independent digest of uploaded file bytes.
 Partial uploads have no completion submission and cannot be accepted.
 
-Acceptance copies all validated observations and provenance into central tables
+Acceptance copies validated observations and provenance into central tables
 and commits an acceptance record plus a read-only site receipt in one transaction.
+The internal acceptance ledger spans sources; a separate receipt table keeps the
+site account's read permission restricted to its own outcomes. Both records commit
+together.
 Invalid submissions enter private quarantine. Transient API/infrastructure errors
 remain retriable. Acceptance is separate from fact publication: accepted raw data
 can be replayed if a later transformation fails.
 
 A crash between extraction and packaging retains the completed source snapshot
-under `source/`. The next run packages that exact snapshot without querying
-Galaxy again. Source files are removed after the final bundle has been durably
-written; receipt/checkpoint rules are unchanged. Old completed bundles remain
-uploadable during this transition. Deploy the revised gxadmin and collector
-together before selecting new data.
+under `source/`. The next run packages that snapshot without querying Galaxy
+again. Source files are removed after the final bundle is durably written.
 
 Only an accepted receipt matching both UUID and manifest hash advances the local
 checkpoint and pending-job list. Receipt application follows generation order.
@@ -174,7 +182,9 @@ GXRDB_IMPERSONATE=kui-gxrdb-dev-central@anvil-cost-modeling.iam.gserviceaccount.
 Publishing workflow/code changes requires push approval. A local impersonated run
 checks actual central permissions; a published Actions run also checks federation.
 
-Facts choose the newest accepted generation covering each job. A newer empty
+Accepted manifests store selection bounds or IDs as typed columns. Facts choose
+the newest accepted generation covering each job, without parsing selection JSON
+for each job/manifest pair. A newer empty
 metric set replaces older children; an omitted job in an authoritative selection
 becomes a tombstone. Corrections rebuild old and new creation-month slices.
 Facts, summaries, revision records and the applied-bundle ledger commit together.
@@ -182,8 +192,8 @@ Replays and older delayed uploads cannot inflate totals or reverse newer data.
 
 Allocated core-hours are runtime seconds times declared slots divided by 3,600.
 Only present, non-copied, explicitly non-imported, execution-finished jobs
-(`ok`, `error`, `deleted`) with usable core metrics contribute. Identical duplicate
-values collapse; conflicting, null, invalid or missing values remain unknown.
+(`ok`, `error`, `deleted`) with usable core metrics contribute. For each `(job, plugin, metric_name)`, the highest source metric ID supplies
+the canonical value. Unusable or absent canonical values remain unknown.
 Runtime zero is valid; slots must be a positive integer. Reopened jobs remain
 pending even if old metrics persist. Declared slots do not establish an enforced
 CPU limit. Memory allocation status is independent of allocated core-hours.
@@ -199,13 +209,17 @@ public snapshot export from these facts yet.
 Every query is capped by the remaining per-run
 [`maximumBytesBilled`](https://docs.cloud.google.com/bigquery/docs/reference/rest/v2/Job#jobconfigurationquery); billed bytes
 are deducted even after failed queries. Unknown completion exhausts the remaining
-budget. Central defaults to 1 GiB per run (small development transactions used
-roughly 250–420 MiB), 120-second query timeouts and ten bundles. GitHub has a
-ten-minute timeout and one processing run at a time. These are query-byte limits,
+budget. Central processing accepts up to 128 bundles per run, with a 64 GiB billed-byte
+cap, a 60-minute workflow limit and 120-second query timeouts. These are upper
+limits for monthly/backfill batches; reaching a cap leaves remaining work pending. GitHub allows one processing run at a time.
+Run summaries include accepted jobs, query count, total billed bytes and billed
+bytes per accepted job. That ratio includes whole-month rebuilds and fixed query
+minimums; it is a measured batch diagnostic, not a linear cost model. These are query-byte limits,
 not a reservation or source-coverage guarantee.
 
-Public logs contain statuses, run/bundle IDs, counts and billed bytes. Raw rows,
-SQL-error bodies and credentials stay private. The workflow opens one issue per
+Public Actions logs contain statuses, run/bundle IDs, counts and billed bytes.
+Site administrators receive useful errors locally; collector export logs retain
+gxadmin stderr. Raw rows, SQL-error bodies and credentials stay out of public logs. The workflow opens one issue per
 unresolved failure streak with a link to the run. Check private quarantine and
 receipts when diagnosing rejected data.
 

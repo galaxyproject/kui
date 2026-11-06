@@ -49,8 +49,8 @@ class DurableCollection(unittest.TestCase):
         self.manifest = {'bundleId': ID, 'observationGeneration': '9007199254740993',
                          'selection': {'mode': 'id_list', 'ids': ['1','2']}}
         (self.bundle/'manifest.json').write_text(json.dumps(self.manifest))
-        with gzip.open(self.bundle/'jobs-00000.csv.gz', 'wt') as f:
-            f.write('job_id,state_raw\n1,ok\n2,running\n')
+        with gzip.open(self.bundle/'jobs-00000.jsonl.gz', 'wt') as f:
+            f.write(json.dumps({'job_id':'1','state_raw':'ok'})+'\n'+json.dumps({'job_id':'2','state_raw':'running'})+'\n')
         self.collector.state['pending'] = [ID]
         self.collector.state['pendingJobs'] = ['1','3']
         self.collector.save()
@@ -62,9 +62,12 @@ class DurableCollection(unittest.TestCase):
         self.temp.cleanup()
 
     def test_lost_upload_response_reuses_original_job(self):
-        file = self.bundle/'data.csv.gz'
+        file = self.bundle/'data.jsonl.gz'
         file.write_bytes(b'compressed-test-data')
-        with patch.object(g, 'fault', side_effect=SystemExit(75)):
+        def lose_response(*args):
+            API.load(self.api, *args)
+            raise SystemExit(75)
+        with patch.object(self.api, 'load', side_effect=lose_response):
             with self.assertRaises(SystemExit):
                 self.collector.loaded(self.bundle,'jobs',0,file,[])
         receipt = self.collector.loaded(self.bundle,'jobs',0,file,[])
@@ -76,7 +79,12 @@ class DurableCollection(unittest.TestCase):
             self.collector.loaded(self.bundle,'jobs',0,file,[])
 
     def test_checkpoint_crash_preserves_progress_and_cleans_auxiliary(self):
-        with patch.object(g, 'fault', side_effect=SystemExit(75)):
+        original_replace = g.os.replace
+        def interrupt_archive(source, destination):
+            if source == self.bundle:
+                raise SystemExit(75)
+            return original_replace(source, destination)
+        with patch.object(g.os, 'replace', side_effect=interrupt_archive):
             with self.assertRaises(SystemExit):
                 self.collector.checkpoint(self.bundle)
         saved = json.loads((self.root/'state.json').read_text())

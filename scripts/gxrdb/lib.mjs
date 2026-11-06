@@ -14,7 +14,7 @@ export async function config() {
 }
 export function validateConfig(c) {
   if (typeof c.sourceEpoch !== 'string' || !c.sourceEpoch || c.sourceEpoch.length > 200) throw new Error('invalid_source_epoch');
-  if (!Number.isInteger(c.maximumBundlesPerRun) || c.maximumBundlesPerRun < 1 || c.maximumBundlesPerRun > 100) throw new Error('invalid_bundle_budget');
+  if (!Number.isInteger(c.maximumBundlesPerRun) || c.maximumBundlesPerRun < 1 || c.maximumBundlesPerRun > 200) throw new Error('invalid_bundle_budget');
   if (c.environment !== 'development' || c.serverId !== 'usegalaxy-org') throw new Error('unsupported_pilot');
   for (const key of ['intakeDataset', 'centralDataset']) {
     if (!/^gxrdb_dev[A-Za-z0-9_]*$/.test(c[key])) throw new Error('invalid_development_dataset');
@@ -49,9 +49,10 @@ export function tableName(c, dataset, table) {
   return `\`${c.projectId}.${dataset}.${table}\``;
 }
 export class QueryBudget {
-  constructor(bq, c) { this.bq = bq; this.c = c; this.remaining = BigInt(c.maximumBytesBilled); this.billed = 0n; }
+  constructor(bq, c) { this.bq = bq; this.c = c; this.remaining = BigInt(c.maximumBytesBilled); this.billed = 0n; this.queries = 0; }
   async query(query, params = {}, types = {}) {
     if (this.remaining <= 0n) throw new Error('query_budget_exhausted');
+    this.queries++;
     const [job] = await this.bq.createQueryJob({ query, params, types,
       useLegacySql: false, location: this.c.location, maximumBytesBilled: this.remaining.toString(),
       jobTimeoutMs: 120000, labels: { application: 'gxrdb', environment: 'development' },

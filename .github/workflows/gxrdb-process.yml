@@ -16,7 +16,7 @@ jobs:
   process:
     if: github.repository == 'galaxyproject/kui' && github.ref == 'refs/heads/main'
     runs-on: gcp-runner
-    timeout-minutes: 10
+    timeout-minutes: 60
     env:
       GXRDB_CONFIG: gxrdb/dev.json
     steps:

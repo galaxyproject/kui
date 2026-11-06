@@ -1,5 +1,4 @@
-import { writeFile } from 'node:fs/promises';
-import { readJson, root, isMain } from './lib.mjs';
+import { readJson, isMain } from './lib.mjs';
 
 const types = { uuid: 'STRING', string: 'STRING', int64: 'INTEGER', utc_timestamp: 'TIMESTAMP', boolean: 'BOOLEAN', decimal_text: 'STRING', json_array_text: 'STRING' };
 const field = (name, type, required = false) => ({ name, type, mode: required ? 'REQUIRED' : 'NULLABLE' });
@@ -41,6 +40,9 @@ export function definitions(contract) {
     field('status', 'STRING', true), field('manifest_count', 'INTEGER', true), field('workflow_run_id', 'STRING'),
   ] }, timePartitioning: { type: 'DAY', field: 'started_at' } };
   out.tables['central.retained_manifests'] = structuredClone(out.tables['intake.manifests']);
+  out.tables['central.retained_manifests'].schema.fields.push(
+    field('selection_low', 'INTEGER'), field('selection_high', 'INTEGER'),
+    { name:'selection_ids', type:'INTEGER', mode:'REPEATED' });
   out.tables['central.quarantine'] = { schema: { fields: [
     field('submission_sha256', 'STRING', true), field('bundle_id', 'STRING'), field('reason_code', 'STRING', true),
     field('manifest_json', 'STRING', true), field('recorded_at', 'TIMESTAMP', true),
@@ -69,9 +71,4 @@ export function definitions(contract) {
   ] }, timePartitioning: { type: 'MONTH', field: 'created_month' }, clustering: { fields: ['server_id', 'source_epoch'] }, requirePartitionFilter: true };
   return out;
 }
-if (isMain(import.meta.url)) {
-  const schema = definitions(await readJson('schemas/gxrdb/export-v1.json'));
-  await writeFile(`${root}/schemas/gxrdb/bigquery-v1.json`, `${JSON.stringify(schema, null, 2)}\n`);
-  const collector = Object.fromEntries(['jobs', 'numeric_metrics', 'manifests'].map(name => [name, schema.tables[`intake.${name}`].schema.fields]));
-  await writeFile(`${root}/collector/schemas/gxrdb-v1.json`, `${JSON.stringify(collector, null, 2)}\n`);
-}
+if (isMain(import.meta.url)) console.log(JSON.stringify(definitions(await readJson('schemas/gxrdb/export-v1.json')), null, 2));

@@ -10,7 +10,6 @@
     "sourceEpoch",
     "observationGeneration",
     "observedAt",
-    "csvNullMarker",
     "source",
     "selection",
     "requestedComponents",
@@ -34,16 +33,13 @@
     },
     "observationGeneration": {
       "type": "string",
-      "pattern": "^[1-9][0-9]{0,18}$"
+      "pattern": "^[1-9][0-9]{0,18}$",
+      "format": "int64-positive"
     },
     "observedAt": {
       "type": "string",
       "format": "date-time",
       "pattern": "Z$"
-    },
-    "csvNullMarker": {
-      "type": "string",
-      "pattern": "^__gxrdb_null_[0-9a-f-]{36}__$"
     },
     "source": {
       "type": "object",
@@ -108,11 +104,13 @@
         },
         "lowExclusive": {
           "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,18})$"
+          "pattern": "^(0|[1-9][0-9]{0,18})$",
+          "format": "int64"
         },
         "highInclusive": {
           "type": "string",
-          "pattern": "^(0|[1-9][0-9]{0,18})$"
+          "pattern": "^(0|[1-9][0-9]{0,18})$",
+          "format": "int64"
         },
         "ids": {
           "type": "array",
@@ -121,7 +119,8 @@
           "uniqueItems": true,
           "items": {
             "type": "string",
-            "pattern": "^(0|[1-9][0-9]{0,18})$"
+            "pattern": "^(0|[1-9][0-9]{0,18})$",
+            "format": "int64"
           }
         }
       },
@@ -295,7 +294,7 @@
                 },
                 "file": {
                   "type": "string",
-                  "pattern": "^[a-z][a-z0-9_]*-[0-9]{5}\\.csv\\.gz$"
+                  "pattern": "^[a-z][a-z0-9_]*-[0-9]{5}\\.jsonl\\.gz$"
                 },
                 "rows": {
                   "type": "integer",

@@ -3,14 +3,11 @@ import { tableName } from './lib.mjs';
 import { contract, definitions } from './bundle.mjs';
 
 export function covers(manifest, jobId) {
-  return `((JSON_VALUE(${manifest}.manifest_json,'$.selection.mode')='id_range'
-    AND ${jobId}>CAST(JSON_VALUE(${manifest}.manifest_json,'$.selection.lowExclusive') AS INT64)
-    AND ${jobId}<=CAST(JSON_VALUE(${manifest}.manifest_json,'$.selection.highInclusive') AS INT64))
-    OR (JSON_VALUE(${manifest}.manifest_json,'$.selection.mode')='id_list'
-      AND CAST(${jobId} AS STRING) IN UNNEST(IFNULL(JSON_VALUE_ARRAY(${manifest}.manifest_json,'$.selection.ids'),ARRAY<STRING>[]))))`;
+  return `((${jobId}>${manifest}.selection_low AND ${jobId}<=${manifest}.selection_high)
+    OR ${jobId} IN UNNEST(${manifest}.selection_ids))`;
 }
 const terminal = "('ok','error','deleted')";
-export function rebuildSQL(c, { injectFailure = false } = {}) {
+export function rebuildSQL(c) {
   const t = id => tableName(c,c.centralDataset,id);
   const jobFields = contract.components.jobs.fields.map(f => f.name);
   const factFields = definitions.tables['central.fact_jobs'].schema.fields.map(f=>f.name).join(',');
@@ -55,20 +52,19 @@ export function rebuildSQL(c, { injectFailure = false } = {}) {
     ), metrics AS (
       SELECT n.* FROM ${t('retained_numeric_metrics')} n JOIN covering o ON n.bundle_id=o.bundle_id AND n.job_id=o.job_id
       WHERE n.server_id=@server AND n.source_epoch=@epoch
+    ), canonical_metrics AS (
+      SELECT * FROM metrics
+      QUALIFY ROW_NUMBER() OVER(PARTITION BY job_id,plugin,metric_name ORDER BY metric_id DESC)=1
     ), core_values AS (
-      SELECT job_id,metric_name,
-        CASE WHEN COUNTIF(metric_value_raw IS NULL)=0 AND COUNTIF(metric_value_raw IS NOT NULL AND SAFE_CAST(metric_value_raw AS BIGNUMERIC) IS NULL)=0
-          AND COUNT(DISTINCT SAFE_CAST(metric_value_raw AS BIGNUMERIC))=1 THEN MIN(SAFE_CAST(metric_value_raw AS BIGNUMERIC)) END AS value,
-        CASE WHEN COUNT(DISTINCT SAFE_CAST(metric_value_raw AS BIGNUMERIC))>1 THEN 'conflict'
-          WHEN COUNTIF(metric_value_raw IS NULL)>0 THEN 'null_observation'
-          WHEN COUNTIF(SAFE_CAST(metric_value_raw AS BIGNUMERIC) IS NULL)>0 THEN 'invalid_value' ELSE 'present' END AS status
-      FROM metrics WHERE plugin='core' AND metric_name IN ('runtime_seconds','galaxy_slots','galaxy_memory_mb') GROUP BY job_id,metric_name
+      SELECT job_id,metric_name,SAFE_CAST(metric_value_raw AS BIGNUMERIC) AS value,
+        IF(SAFE_CAST(metric_value_raw AS BIGNUMERIC) IS NULL,'missing','present') AS status
+      FROM canonical_metrics WHERE plugin='core' AND metric_name IN ('runtime_seconds','galaxy_slots','galaxy_memory_mb')
     ), core AS (SELECT job_id,${corePivot} FROM core_values GROUP BY job_id),
     cgroup AS (SELECT job_id,${trust('cpu',cpu)},${trust('memory',memory)},${trust('oom',oom)},
-      COUNTIF(${version1})>0 AS v1,COUNTIF(${version2})>0 AS v2 FROM metrics WHERE plugin='cgroup' GROUP BY job_id),
+      COUNTIF(${version1})>0 AS v1,COUNTIF(${version2})>0 AS v2 FROM canonical_metrics WHERE plugin='cgroup' GROUP BY job_id),
     inputs AS (
       SELECT o.bundle_id,j.server_id,j.source_epoch,o.observation_generation,j.part_index,${jobFields.map(f=>`j.${f}`).join(',')},
-        j.bundle_id AS content_bundle_id,TIMESTAMP(JSON_VALUE(o.manifest_json,'$.observedAt')) AS observed_at,
+        j.bundle_id AS content_bundle_id,o.submitted_at AS observed_at,
         DATE_TRUNC(DATE(j.create_time),MONTH) AS created_month,j.bundle_id=o.bundle_id AS is_present,
         COALESCE(j.state_raw IN ${terminal},FALSE) AS is_terminal,
         CASE WHEN j.copied_from_job_id IS NOT NULL THEN 'copied' WHEN j.imported IS TRUE THEN 'imported' WHEN j.imported IS FALSE THEN 'eligible' ELSE 'unknown_copy_marker' END AS compute_eligibility,
@@ -103,7 +99,6 @@ export function rebuildSQL(c, { injectFailure = false } = {}) {
       DELETE FROM ${t('fact_jobs')} WHERE server_id=@server AND source_epoch=@epoch AND created_month IS NULL;
       INSERT INTO ${t('fact_jobs')} (${factFields}) SELECT ${factFields} FROM replacement WHERE created_month IS NULL;
     END IF;
-    ${injectFailure ? "ASSERT FALSE AS 'injected_publication_failure';" : ''}
     INSERT INTO ${t('applied_bundles')} SELECT bundle_id,server_id,source_epoch,@revision,CURRENT_TIMESTAMP() FROM todo;
   END IF;
   COMMIT TRANSACTION;

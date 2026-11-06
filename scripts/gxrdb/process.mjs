@@ -1,3 +1,4 @@
+import { definitions as makeDefinitions } from './schema.mjs';
 import { randomUUID } from 'node:crypto';
 import { intakeBundles, acceptBundle, quarantine } from './receiver.mjs';
 import { BundleError } from './bundle.mjs';
@@ -7,7 +8,7 @@ import { config, clients, readJson, tableName, QueryBudget, isMain, failure, sam
 
 export { sameSchema };
 export async function verifyTables(bq, c) {
-  const definitions = await readJson('schemas/gxrdb/bigquery-v1.json');
+  const definitions = makeDefinitions(await readJson('schemas/gxrdb/export-v1.json'));
   for (const [layer, datasetId] of [['intake', c.intakeDataset], ['central', c.centralDataset]]) {
     const dataset = bq.dataset(datasetId);
     const [metadata] = await dataset.getMetadata();
@@ -30,12 +31,11 @@ export async function processBundles(bq,c,options={}) {
   const budget = new QueryBudget(bq,c);
   const submissions = await intakeBundles(c,budget);
   const runId = randomUUID(); const started = new Date().toISOString();
-  let accepted = 0, rejected = 0;
+  let accepted = 0, rejected = 0, acceptedJobs = 0;
   for (const row of submissions) {
     try {
       const result = await acceptBundle(row.manifest_json,row.transport_json,c,budget,options.jobClient??bq,{envelope:row,...options});
-      if (!result.replay) accepted++;
-      if (options.crashAfterAcceptance) throw new Error('injected_after_acceptance');
+      if (!result.replay) { accepted++; acceptedJobs += result.manifest.components.find(x=>x.name==='jobs').rows; }
     } catch (error) {
       if (!(error instanceof BundleError)) throw error;
       await quarantine(row.manifest_json,row.transport_json,c,budget,error.message);
@@ -48,7 +48,7 @@ export async function processBundles(bq,c,options={}) {
     VALUES(@run,TIMESTAMP(@started),CURRENT_TIMESTAMP(),@status,@count,@workflow)`,
     {run:runId,started,status:rejected?'quarantined':'processed',count:String(submissions.length),workflow:process.env.GITHUB_RUN_ID??null},
     {run:'STRING',started:'STRING',status:'STRING',count:'INT64',workflow:'STRING'});
-  const summary={run_id:runId,status:rejected?'quarantined':'processed',accepted,rejected,bytes_billed:budget.billed.toString(),revision:publication.revision};
+  const summary={run_id:runId,status:rejected?'quarantined':'processed',accepted,rejected,accepted_jobs:acceptedJobs,query_count:budget.queries,bytes_billed_per_accepted_job:acceptedJobs ? (budget.billed/BigInt(acceptedJobs)).toString() : null,bytes_billed:budget.billed.toString(),revision:publication.revision};
   console.log(JSON.stringify(summary));
   if (rejected) throw new Error('bundles_quarantined');
   return summary;
