@@ -5,6 +5,7 @@ import csv
 import fcntl
 import gzip
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -186,6 +187,82 @@ def fault(c, name):
         os._exit(75)
 
 
+def package_source(source, output, request, schemas):
+    metadata = json.loads((source/'metadata.json').read_text())
+    cap = metadata['capabilities']
+    marker = '__gxrdb_null_' + request['bundleId'] + '__'
+    if (metadata.get('formatVersion') != 1 or cap.get('formatVersion') != 1
+            or metadata.get('selection') != request['selection'] or metadata.get('csvNullMarker') != marker
+            or cap.get('galaxyRelease') != request['galaxyRelease'] or cap.get('timestampInterpretation') != 'UTC'):
+        raise ValueError('source_export_mismatch')
+    wire_cap = {k: v for k, v in cap.items() if k not in ['formatVersion', 'gxadminVersion']}
+    wire_cap['contractVersion'] = '1.0.0'
+    wire_cap['sourceFormatVersion'] = metadata['formatVersion']
+    wire_cap['limits'] = {'cpuQuota': 'unavailable_in_v1_allowlist', 'memory': 'raw_cgroup_limit_metrics_when_present'}
+    wire_cap['components'] = {}
+    output.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+    work = Path(tempfile.mkdtemp(prefix='.packaging-', dir=output.parent.parent))
+    try:
+        components = []
+        csv.field_size_limit(request['maxOutputBytes'])
+        envelope = [request[k] for k in ['bundleId', 'serverId', 'sourceEpoch', 'observationGeneration']] + ['0']
+        for name in ['jobs', 'numeric_metrics']:
+            columns = [f['name'] for f in schemas[name]]
+            fields = columns[5:]
+            declared = cap['components'].get(name, {})
+            if declared.get('schemaVersion') != 1 or declared.get('status') != 'supported' or declared.get('columns') != fields:
+                raise ValueError('source_columns_mismatch')
+            wire_cap['components'][name] = {**declared, 'columns': columns}
+            path = work/(name+'-00000.csv.gz')
+            count = 0
+            with (source/(name+'.csv')).open(encoding='utf-8', newline='') as inp, path.open('wb') as raw:
+                rows = csv.reader(inp, strict=True)
+                if next(rows) != fields:
+                    raise ValueError('source_header_mismatch')
+                with gzip.GzipFile(filename='', fileobj=raw, mode='wb', mtime=0) as compressed:
+                    with io.TextIOWrapper(compressed, encoding='utf-8', newline='') as text:
+                        writer = csv.writer(text, lineterminator='\n')
+                        writer.writerow(columns)
+                        for row in rows:
+                            if len(row) != len(fields):
+                                raise ValueError('source_row_width_mismatch')
+                            writer.writerow(envelope+row)
+                            count += 1
+            if type(metadata['rows'].get(name)) is not int or count != metadata['rows'][name]:
+                raise ValueError('source_count_mismatch')
+            if name == 'jobs' and count > request['maxRows']:
+                raise ValueError('source_row_budget_exceeded')
+            data = path.read_bytes()
+            components.append({'name': name, 'schemaVersion': 1, 'status': 'complete', 'rows': count,
+                'parts': [{'partIndex': 0, 'file': path.name, 'rows': count, 'compressedBytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}]})
+        capbytes = canonical(wire_cap)
+        (work/'capabilities.json').write_bytes(capbytes)
+        manifest = {'contractVersion': '1.0.0', **{k: request[k] for k in ['bundleId', 'serverId', 'sourceEpoch', 'observationGeneration', 'selection']},
+            'observedAt': metadata['observedAt'], 'csvNullMarker': marker, 'requestedComponents': ['jobs','numeric_metrics'], 'components': components,
+            'source': {**{k: cap[k] for k in ['galaxyRelease','postgresqlVersion','gxadminVersion','exporterBuild','timestampInterpretation']},
+                'capabilitiesSha256': hashlib.sha256(capbytes).hexdigest(), 'snapshotId': metadata['snapshotId']}}
+        (work/'manifest.json').write_bytes(canonical(manifest))
+        if sum(f.stat().st_size for f in work.iterdir()) > request['maxOutputBytes']:
+            raise ValueError('bundle_output_budget_exceeded')
+        for file in work.iterdir():
+            with file.open('rb') as out:
+                os.fsync(out.fileno())
+        fd = os.open(work, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+        os.rename(work, output)
+        fd = os.open(output.parent, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    finally:
+        if work.exists():
+            shutil.rmtree(work)
+
+
 class Collector:
     def __init__(self, c, api=None):
         self.c = c
@@ -332,21 +409,30 @@ class Collector:
             if not bundle.exists() and (self.root/'rejected'/identity).exists():
                 raise ValueError('rejected_retry_interrupted_use_retry_rejected')
             if not bundle.exists():
-                request = self.root/'requests'/(identity+'.json')
-                log = self.root/(identity+'.export.log')
-                with log.open('ab') as out:
-                    proc = subprocess.Popen([self.c['gxadmin'], 'galaxy', 'export-job-observations', str(request), str(bundle)], stdout=out, stderr=out, start_new_session=True)
-                    try:
-                        result = proc.wait(timeout=max(1,self.api.deadline-time.monotonic()))
-                    except subprocess.TimeoutExpired:
-                        os.killpg(proc.pid,signal.SIGTERM)
+                request = json.loads((self.root/'requests'/(identity+'.json')).read_text())
+                source = self.root/'source'/identity
+                source_request = {k: request[k] for k in ['galaxyRelease','timestampInterpretation','selection','maxRows','maxOutputBytes','maxRuntimeSeconds']}
+                source_request['csvNullMarker'] = '__gxrdb_null_' + identity + '__'
+                request_path = self.root/'requests'/(identity+'.source.json')
+                atomic(request_path, source_request)
+                if not source.exists():
+                    log = self.root/(identity+'.export.log')
+                    with log.open('ab') as out:
+                        proc = subprocess.Popen([self.c['gxadmin'], 'galaxy', 'export-job-observations', str(request_path), str(source)], stdout=out, stderr=out, start_new_session=True)
                         try:
-                            proc.wait(timeout=5)
+                            result = proc.wait(timeout=max(1,self.api.deadline-time.monotonic()))
                         except subprocess.TimeoutExpired:
-                            os.killpg(proc.pid,signal.SIGKILL);proc.wait()
-                        raise ValueError('source_run_budget_exceeded') from None
-                    if result:
-                        raise ValueError('source_export_failed')
+                            os.killpg(proc.pid,signal.SIGTERM)
+                            try:
+                                proc.wait(timeout=5)
+                            except subprocess.TimeoutExpired:
+                                os.killpg(proc.pid,signal.SIGKILL);proc.wait()
+                            raise ValueError('source_run_budget_exceeded') from None
+                        if result:
+                            raise ValueError('source_export_failed')
+                fault(self.c, 'after_source_export')
+                package_source(source, bundle, request, self.schema)
+                shutil.rmtree(source)
                 fault(self.c, 'after_export')
             ready.append((bundle, self.upload(bundle)))
         for bundle, accepted in ready:
@@ -355,6 +441,11 @@ class Collector:
             self.checkpoint(bundle)
 
     def clean(self):
+        # These are unfinished packaging attempts; the immutable source snapshot
+        # remains available until the final bundle is durably renamed.
+        for partial in self.root.glob('.packaging-*'):
+            if partial.is_dir():
+                shutil.rmtree(partial)
         archive = self.root/'accepted'
         if archive.exists():
             for p in archive.iterdir():
@@ -371,6 +462,10 @@ class Collector:
 
     def remove_auxiliary(self, identity):
         (self.root/'requests'/(identity+'.json')).unlink(missing_ok=True)
+        (self.root/'requests'/(identity+'.source.json')).unlink(missing_ok=True)
+        source = self.root/'source'/identity
+        if source.exists():
+            shutil.rmtree(source)
         (self.root/(identity+'.export.log')).unlink(missing_ok=True)
 
     def collect(self, selection=None):

@@ -99,14 +99,24 @@ refresh and reconciliation queues follow in the monthly lifecycle step.
 Defaults bound a run to 500 selected IDs, 16 MiB of source output, 256 MiB of local
 spool, four unaccepted bundles, 50,000 pending jobs and ten minutes. gxadmin uses
 one read-only repeatable-read transaction, finite query/lock timeouts, an output
-budget and a shared advisory lock against concurrent exports. The collector
-also holds a local exclusive lock. State/spool directories must be private.
+budget. The collector holds a local exclusive lock to prevent overlapping
+runs. State/spool directories must be private.
 
 ## Upload, acceptance and recovery
 
-The collector saves a generation and UUID before extraction. Completed files are
-immutable, with deterministic gzip, checksums and explicit CSV schemas/null
-markers. Repeated upload attempts inspect the original deterministic load-job ID;
+The collector saves a generation and UUID before extraction. gxadmin writes
+`jobs.csv`, `numeric_metrics.csv` and `metadata.json` from one source snapshot.
+Its format-version-1 interface contains Galaxy fields, schema capabilities,
+selection, observed time, snapshot ID and the CSV null marker. It does not know
+site identities, observation generations, gxrdb manifests or BigQuery.
+
+The collector validates the source metadata and headers, adds the common
+site/bundle/generation columns, and produces deterministic gzip parts,
+checksums, the wire capability record and the v1 completion manifest. Payload
+values remain strings throughout packaging; numeric counters and IDs are never
+converted through floating point. `sourceFormatVersion` in the capability
+record identifies the native export format. The receiver's wire contract is
+unchanged. Completed files are immutable. Repeated upload attempts inspect the original deterministic load-job ID;
 a new attempt ID is allowed only after a confirmed atomic load failure.
 
 Component uploads are followed by a completion submission containing the source
@@ -122,6 +132,13 @@ and commits an acceptance record plus a read-only site receipt in one transactio
 Invalid submissions enter private quarantine. Transient API/infrastructure errors
 remain retriable. Acceptance is separate from fact publication: accepted raw data
 can be replayed if a later transformation fails.
+
+A crash between extraction and packaging retains the completed source snapshot
+under `source/`. The next run packages that exact snapshot without querying
+Galaxy again. Source files are removed after the final bundle has been durably
+written; receipt/checkpoint rules are unchanged. Old completed bundles remain
+uploadable during this transition. Deploy the revised gxadmin and collector
+together before selecting new data.
 
 Only an accepted receipt matching both UUID and manifest hash advances the local
 checkpoint and pending-job list. Receipt application follows generation order.

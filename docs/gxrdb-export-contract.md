@@ -1,6 +1,6 @@
 # gxrdb export contract v1
 
-Status: **frozen v1 baseline for initial implementation**. The shared-snapshot
+Status: **frozen v1 transport bundle contract**. The shared-snapshot
 mechanism passed development tests on Galaxy 26.2/PostgreSQL 17.2 and
 maintainer-run org validation on Galaxy 26.2/PostgreSQL 16.15, including 500 jobs
 and 1,335 populated metric rows. Org retains database records; no cleanup-script
@@ -25,15 +25,37 @@ The gxadmin interface has three responsibilities:
 
 1. Discover capabilities and the declared schema/allow-list versions.
 2. Discover indexed source ID bounds for jobs/users.
-3. Export a bounded range or explicit ID list into one coherent bundle, or an
-   observation-time storage aggregate. The collector supplies source identity,
-   persisted generation, and bundle identity; gxadmin owns the source queries.
+3. Export a bounded range or explicit ID list as coherent source CSVs with
+   snapshot metadata. gxadmin owns source queries and schema compatibility.
+   The collector owns site/bundle/generation fields, gzip, checksums and the
+   transport manifest defined here. Storage exports follow in a later slice.
 
 Slice A implements `galaxy job-observation-capabilities`,
 `galaxy job-observation-bounds` and `galaxy export-job-observations` in gxadmin.
 They currently support the jobs/numeric-metrics scope. Remaining component
 exports follow in later slices. Runner backend is read from
 `job.job_runner_name`; `job.runner_name` is a different legacy field.
+
+## Native gxadmin export and collector packaging
+
+The native format-version-1 output is `jobs.csv`, `numeric_metrics.csv` and
+`metadata.json`. CSV headers contain only the component fields from
+`export-v1.json`, without the common envelope. Metadata records the selection,
+CSV null marker, row counts, observation time, PostgreSQL snapshot ID and source
+capabilities/build. Source numeric metrics remain unmodified decimal text.
+
+The request contains `galaxyRelease`, verified `timestampInterpretation=UTC`,
+`selection`, optional `csvNullMarker`, and row/output/time budgets. Capabilities
+and bounds use `GXADMIN_GALAXY_RELEASE` and `GXADMIN_SOURCE_TIMEZONE`. A native
+export does not use gxrdb identities or generate a transport manifest.
+
+The collector reserves its identity/generation before extraction, passes its
+per-bundle marker to gxadmin, then attaches the common envelope to every CSV
+row. It derives the wire capability record (including `sourceFormatVersion`),
+compresses the files, counts/checksums them and writes the frozen v1 manifest.
+Repackaging the same native snapshot and persisted request yields the same wire
+bytes. Native schema compatibility is checked before upload; receiver validation
+of the transport bundle remains independent.
 
 ## Snapshot and selection
 
